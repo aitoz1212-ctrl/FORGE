@@ -1,0 +1,1605 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>FORGE Bench</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="FORGE">
+  <meta name="theme-color" content="#0b0b10">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" href="icon-192.png" type="image/png">
+  <style>
+    :root {
+      --bg: #0b0b10; --bg2: #12121a; --card: #16161f; --card2: #1d1d28; --line: rgba(255,255,255,0.09);
+      --text: #f4f6fa; --muted: #9aa3b2; --dim: #6b7280;
+      --accent: #6366f1; --accent2: #818cf8; --accentSoft: rgba(99,102,241,0.16);
+      --ok: #10b981; --okSoft: rgba(16,185,129,0.15); --warn: #f59e0b; --danger: #ef4444;
+      --r: 16px; --nav: 64px;
+      --safe-b: env(safe-area-inset-bottom, 0px); --safe-t: env(safe-area-inset-top, 0px);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", "Segoe UI", sans-serif; font-size: 15px; line-height: 1.5; min-height: 100vh; }
+    button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+    input, select, textarea { font: inherit; color: var(--text); }
+    h1, h2, h3, p { margin: 0; }
+    .wrap { max-width: 520px; margin: 0 auto; padding: calc(12px + var(--safe-t)) 16px calc(var(--nav) + 110px + var(--safe-b)); }
+    .hidden { display: none !important; }
+
+    /* header */
+    .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .brand { font-weight: 800; letter-spacing: 0.06em; font-size: 20px; }
+    .brand small { display: block; font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.12em; }
+    .icon-btn { width: 40px; height: 40px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: var(--card); border: 1px solid var(--line); }
+    .icon-btn svg { width: 20px; height: 20px; }
+
+    /* cards */
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; margin-bottom: 12px; }
+    .card-title { font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: 0.06em; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .big { font-size: 40px; font-weight: 800; line-height: 1.1; letter-spacing: -0.01em; }
+    .big small { font-size: 16px; font-weight: 600; color: var(--muted); margin-left: 4px; }
+    .muted { color: var(--muted); } .dim { color: var(--dim); } .small { font-size: 12px; } .tiny { font-size: 11px; }
+    .row { display: flex; align-items: center; gap: 8px; } .row.between { justify-content: space-between; } .wrapf { flex-wrap: wrap; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; } .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .stat { background: var(--card2); border-radius: 12px; padding: 10px 12px; }
+    .stat b { display: block; font-size: 20px; } .stat span { font-size: 11px; color: var(--muted); }
+    .up { color: var(--ok); } .down { color: var(--danger); }
+    .pill { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: var(--accentSoft); color: var(--accent2); }
+    .pill.ok { background: var(--okSoft); color: #6ee7b7; } .pill.warn { background: rgba(245,158,11,0.15); color: #fcd34d; } .pill.gray { background: rgba(255,255,255,0.07); color: var(--muted); }
+    .sep { height: 1px; background: var(--line); margin: 12px 0; }
+
+    /* buttons */
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; min-height: 44px; padding: 0 16px; border-radius: 12px; font-weight: 700; background: var(--card2); border: 1px solid var(--line); }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .btn.ok { background: var(--ok); border-color: var(--ok); color: #fff; }
+    .btn.ghost { background: transparent; }
+    .btn.danger { color: #fca5a5; }
+    .btn.block { width: 100%; }
+    .btn.sm { min-height: 34px; padding: 0 12px; font-size: 13px; border-radius: 10px; }
+    .btn:active { transform: scale(0.98); }
+    .link { color: var(--accent2); font-weight: 700; font-size: 13px; }
+
+    /* inputs */
+    .field { margin-bottom: 12px; }
+    .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; font-weight: 600; }
+    .inp { width: 100%; min-height: 44px; padding: 0 12px; border-radius: 12px; background: var(--bg2); border: 1px solid var(--line); outline: none; }
+    .inp:focus { border-color: var(--accent); }
+    select.inp { appearance: none; -webkit-appearance: none; }
+
+    /* nav */
+    .nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: rgba(11,11,16,0.96); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid var(--line); padding-bottom: var(--safe-b); }
+    .nav-in { max-width: 520px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); height: var(--nav); }
+    .nav button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 11px; font-weight: 700; color: var(--dim); }
+    .nav button svg { width: 22px; height: 22px; }
+    .nav button.on { color: var(--accent2); }
+
+    /* record: date bar */
+    .datebar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .datebar .d { flex: 1; text-align: center; font-weight: 800; font-size: 17px; }
+    .week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 14px; }
+    .week button { padding: 6px 0; border-radius: 10px; background: var(--card); border: 1px solid var(--line); font-size: 11px; color: var(--muted); }
+    .week button b { display: block; font-size: 15px; color: var(--text); }
+    .week button.sel { background: var(--accent); border-color: var(--accent); color: #e0e7ff; }
+    .week button .dot { display: block; width: 5px; height: 5px; border-radius: 50%; margin: 2px auto 0; background: transparent; }
+    .week button .dot.on { background: var(--ok); }
+
+    /* exercise card */
+    .ex { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); margin-bottom: 12px; overflow: hidden; }
+    .ex.bench { border-color: rgba(99,102,241,0.45); }
+    .ex-head { padding: 12px 14px 8px; display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+    .ex-name { font-weight: 800; font-size: 16px; }
+    .ex-plan { font-size: 12px; color: #6ee7b7; margin-top: 2px; }
+    .ex-prev { font-size: 12px; color: var(--muted); margin-top: 1px; }
+    .sets { padding: 0 8px 8px; }
+    .set { display: grid; grid-template-columns: 28px 1.35fr 1fr 44px 42px; gap: 6px; align-items: center; padding: 6px 4px; border-radius: 12px; }
+    .set + .set { margin-top: 2px; }
+    .set.done { background: var(--okSoft); }
+    .set.wu .setno { color: var(--warn); }
+    .setno { text-align: center; font-weight: 800; font-size: 13px; color: var(--muted); border-radius: 8px; padding: 6px 0; background: rgba(255,255,255,0.04); }
+    .stepper { display: grid; grid-template-columns: 26px 1fr 26px; align-items: center; background: var(--bg2); border: 1px solid var(--line); border-radius: 10px; height: 42px; }
+    .stepper button { height: 100%; font-size: 18px; font-weight: 700; color: var(--muted); }
+    .stepper input { width: 100%; min-width: 0; text-align: center; background: transparent; border: 0; outline: none; font-weight: 800; font-size: 16px; padding: 0; }
+    .stepper .u { font-size: 10px; color: var(--dim); text-align: center; line-height: 1; margin-top: -2px; }
+    .rir { height: 42px; border-radius: 10px; background: var(--bg2); border: 1px solid var(--line); text-align: center; font-weight: 700; font-size: 13px; padding: 0; width: 100%; appearance: none; -webkit-appearance: none; text-align-last: center; }
+    .check { width: 42px; height: 42px; border-radius: 10px; border: 2px solid var(--line); display: flex; align-items: center; justify-content: center; }
+    .check svg { width: 22px; height: 22px; opacity: 0.25; }
+    .set.done .check { background: var(--ok); border-color: var(--ok); } .set.done .check svg { opacity: 1; }
+    .set-sub { grid-column: 2 / 6; font-size: 11px; color: var(--dim); margin-top: -2px; padding-left: 2px; display: flex; gap: 10px; flex-wrap: wrap; }
+    .set-head { display: grid; grid-template-columns: 28px 1.35fr 1fr 44px 42px; gap: 6px; padding: 0 4px 2px; font-size: 10px; color: var(--dim); text-align: center; font-weight: 700; }
+    .ex-foot { display: flex; gap: 8px; padding: 4px 12px 12px; flex-wrap: wrap; }
+    .cues { margin: 0 12px 10px; background: var(--bg2); border-radius: 12px; padding: 8px 10px; }
+    .cues summary { font-size: 12px; font-weight: 700; color: var(--accent2); cursor: pointer; list-style: none; }
+    .cues summary::-webkit-details-marker { display: none; }
+    .cue { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; padding: 5px 0; }
+    .cue input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--ok); flex-shrink: 0; }
+
+    /* timer */
+    .timer { position: fixed; left: 0; right: 0; bottom: calc(var(--nav) + var(--safe-b) + 8px); z-index: 45; padding: 0 12px; }
+    .timer-in { max-width: 496px; margin: 0 auto; background: #1f1f2e; border: 1px solid rgba(129,140,248,0.5); border-radius: 16px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .timer-t { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; min-width: 78px; }
+    .timer.end .timer-in { border-color: var(--ok); background: #10261f; }
+    .timer-bar { height: 3px; background: rgba(255,255,255,0.08); border-radius: 2px; margin-top: 4px; overflow: hidden; }
+    .timer-bar i { display: block; height: 100%; background: var(--accent2); }
+
+    /* sheet & dialog */
+    .sheet-bg { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,0.6); display: flex; align-items: flex-end; justify-content: center; }
+    .sheet { width: 100%; max-width: 520px; max-height: 92vh; overflow-y: auto; background: var(--bg2); border-top-left-radius: 22px; border-top-right-radius: 22px; border: 1px solid var(--line); padding: 16px 16px calc(24px + var(--safe-b)); }
+    .sheet.full { height: 100vh; max-height: 100vh; border-radius: 0; padding-top: calc(16px + var(--safe-t)); }
+    .sheet-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 8px; }
+    .sheet-h h3 { font-size: 18px; font-weight: 800; }
+    .dlg-bg { position: fixed; inset: 0; z-index: 90; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .dlg { width: 100%; max-width: 340px; background: #17171f; border: 1px solid var(--line); border-radius: 18px; padding: 20px; }
+    .dlg p { white-space: pre-line; font-size: 14px; margin-bottom: 16px; }
+    .toast { position: fixed; left: 50%; top: calc(18px + var(--safe-t)); transform: translateX(-50%); z-index: 100; background: var(--ok); color: #fff; font-weight: 700; font-size: 14px; padding: 10px 18px; border-radius: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); white-space: pre-line; text-align: center; max-width: 88vw; pointer-events: none; }
+    .toast.err { background: var(--danger); }
+
+    /* list items */
+    .item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px; border-radius: 12px; background: var(--card2); margin-bottom: 8px; }
+    .item-main { flex: 1; min-width: 0; }
+    .item-title { font-weight: 700; }
+    .item-sub { font-size: 12px; color: var(--muted); }
+    .pick { width: 100%; text-align: left; padding: 12px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .tabs { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 10px; padding-bottom: 2px; }
+    .tabs button { flex-shrink: 0; padding: 7px 12px; border-radius: 999px; font-size: 13px; font-weight: 700; background: var(--card); border: 1px solid var(--line); color: var(--muted); }
+    .tabs button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .group { border: 1px solid var(--line); border-radius: var(--r); margin-bottom: 10px; background: var(--card); }
+    .group.active { border-color: rgba(99,102,241,0.6); }
+    .group-h { padding: 12px 14px; display: flex; align-items: center; gap: 8px; }
+    .group-b { padding: 0 10px 10px; }
+    .sess { padding: 10px 12px; border-radius: 12px; background: var(--card2); margin-bottom: 6px; }
+    .sess.next { outline: 2px solid var(--ok); }
+    .empty { text-align: center; color: var(--muted); padding: 24px 12px; font-size: 14px; }
+    table.t { width: 100%; border-collapse: collapse; font-size: 13px; }
+    table.t th { color: var(--muted); font-weight: 600; text-align: left; padding: 6px 4px; font-size: 11px; border-bottom: 1px solid var(--line); }
+    table.t td { padding: 8px 4px; border-bottom: 1px solid var(--line); }
+    table.t td.num, table.t th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .bar-row { display: grid; grid-template-columns: 44px 1fr 56px; gap: 8px; align-items: center; font-size: 12px; margin-bottom: 8px; }
+    .bar { height: 10px; border-radius: 6px; background: rgba(255,255,255,0.07); position: relative; overflow: hidden; }
+    .bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 6px; background: var(--accent); }
+    .bar .band { position: absolute; top: 0; bottom: 0; background: rgba(16,185,129,0.18); }
+    .plates { display: flex; align-items: center; gap: 3px; min-height: 70px; justify-content: center; }
+    .plates .barl { width: 40px; height: 8px; background: #9ca3af; border-radius: 2px; }
+    .plates .pl { border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; color: #111; writing-mode: vertical-rl; }
+    svg.chart text { fill: var(--dim); font-size: 10px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="brand">FORGE<small>BENCH PRESS LAB</small></div>
+      <div class="row">
+      <button class="btn sm" id="openTimer" aria-label="休憩タイマー" style="min-height:40px;border-radius:12px;background:var(--accentSoft);border-color:rgba(129,140,248,0.4);color:#c7d2fe">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:18px;height:18px"><circle cx="12" cy="13" r="8"/><path stroke-linecap="round" d="M12 9v4l2.5 2M9 2h6"/></svg>タイマー</button>
+      <button class="icon-btn" id="openSettings" aria-label="設定">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.3 4.3c.4-1.8 3-1.8 3.4 0a1.7 1.7 0 002.6 1.1c1.5-.9 3.3.8 2.4 2.4a1.7 1.7 0 001 2.5c1.8.5 1.8 3 0 3.5a1.7 1.7 0 00-1 2.5c.9 1.6-.9 3.3-2.4 2.4a1.7 1.7 0 00-2.6 1.1c-.4 1.8-3 1.8-3.4 0a1.7 1.7 0 00-2.6-1.1c-1.5.9-3.3-.8-2.4-2.4a1.7 1.7 0 00-1-2.5c-1.8-.5-1.8-3 0-3.5a1.7 1.7 0 001-2.5c-.9-1.6.9-3.3 2.4-2.4a1.7 1.7 0 002.6-1.1z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+      </div>
+    </div>
+    <main>
+      <section id="view-home"></section>
+      <section id="view-log" class="hidden"></section>
+      <section id="view-prog" class="hidden"></section>
+      <section id="view-stats" class="hidden"></section>
+    </main>
+  </div>
+
+  <div id="timer" class="timer hidden">
+    <div class="timer-in">
+      <div style="flex:1;min-width:0;">
+        <div class="row between"><span class="small muted" id="timerLabel">休憩</span><span class="tiny dim" id="timerNext"></span></div>
+        <div class="row" style="gap:10px;"><span class="timer-t" id="timerT">0:00</span><div style="flex:1;"><div class="timer-bar"><i id="timerBar" style="width:0%"></i></div></div></div>
+      </div>
+      <button class="btn sm" id="timerPlus">+30秒</button>
+      <button class="btn sm" id="timerSkip">終了</button>
+    </div>
+  </div>
+
+  <nav class="nav">
+    <div class="nav-in">
+      <button data-view="home" class="on">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 11l9-7 9 7v9a1 1 0 01-1 1h-5v-6h-6v6H4a1 1 0 01-1-1z"/></svg>ホーム</button>
+      <button data-view="log">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 12h2m12 0h2M7 8v8m10-8v8M9 12h6M6 9v6m12-6v6"/></svg>記録</button>
+      <button data-view="prog">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3M4 11h16M5 5h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z"/></svg>プログラム</button>
+      <button data-view="stats">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 20V10m6 10V4m6 16v-7m4 7H3"/></svg>分析</button>
+    </div>
+  </nav>
+  <input type="file" id="importFile" accept="application/json,.json,text/plain,.txt" class="hidden">
+<script>
+(function () {
+'use strict';
+
+// ===================== Utilities =====================
+const $ = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const dk = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const parseDk = k => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); };
+const WD = ['日', '月', '火', '水', '木', '金', '土'];
+const fmtD = k => { const d = parseDk(k); return `${d.getMonth() + 1}/${d.getDate()}(${WD[d.getDay()]})`; };
+const today = () => dk(new Date());
+const addDays = (k, n) => { const d = parseDk(k); d.setDate(d.getDate() + n); return dk(d); };
+const daysBetween = (a, b) => Math.round((parseDk(b) - parseDk(a)) / 86400000);
+const num = v => { if (v === '' || v == null) return null; const n = parseFloat(String(v).replace(',', '.')); return isFinite(n) ? n : null; };
+const fmtKg = w => w == null ? '-' : (Math.round(w * 100) / 100).toString();
+const roundTo = (w, step) => Math.round(w / step) * step;
+// 推定1RM（Epley）。RIRがあれば「あと何回できたか」も加味
+function e1rm(w, reps, rir) {
+  if (!w || !reps) return null;
+  const r = reps + (rir != null ? rir : 0);
+  if (r > 12) return null;
+  if (r <= 1) return w;
+  return w * (1 + r / 30);
+}
+function mondayOf(k) { const d = parseDk(k); const w = (d.getDay() + 6) % 7; d.setDate(d.getDate() - w); return dk(d); }
+
+// ===================== Storage（元アプリと同じキー＝記録を引き継ぐ） =====================
+const KEY_DATA = 'workout-memo-data-v3';
+const KEY_TPL = 'workout-memo-templates-v1';
+const KEY_SEQ = 'workout-memo-template-seq-v1';
+const KEY_WEIGHT = 'workout-memo-weight-v1';
+const KEY_BIG3 = 'workout-memo-big3-v1';
+const KEY_SET = 'forge-bench-settings-v1';
+const KEY_REST = 'forge-bench-rest-v1';
+const load = (k, def) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? def : v; } catch (e) { return def; } };
+const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { toast('保存に失敗しました（容量不足の可能性）', true); } };
+
+const DEFAULT_SETTINGS = { oneRM: null, meetDate: '', bar: 20, step: 2.5, restMain: 180, restAcc: 90, customEx: [], activeGroup: '', bgSound: true, notifyAsked: false, lastTimer: 120 };
+function getSettings() {
+  const s = Object.assign({}, DEFAULT_SETTINGS, load(KEY_SET, {}));
+  if (!s.oneRM) { const b = load(KEY_BIG3, {}); if (b && b.bench) s.oneRM = Number(b.bench) || null; }
+  return s;
+}
+function setSettings(patch) {
+  const s = Object.assign(getSettings(), patch);
+  save(KEY_SET, s);
+  if (patch.oneRM) { const b = load(KEY_BIG3, {}); b.bench = patch.oneRM; save(KEY_BIG3, b); }
+  return s;
+}
+
+function normSet(s) {
+  const w = num(s.weight), r = num(s.reps);
+  return {
+    weight: w, reps: r == null ? null : Math.round(r),
+    rir: s.rir == null || s.rir === '' ? null : Number(s.rir),
+    warmup: !!s.warmup,
+    done: s.done !== undefined ? !!s.done : (w != null && r != null)
+  };
+}
+function normEx(e) {
+  return { name: e.name || '種目', bodyPart: e.bodyPart || partOf(e.name), note: e.note || '', plan: e.plan || '', sets: (e.sets || []).map(normSet) };
+}
+function allData() { return load(KEY_DATA, {}); }
+function getDay(k) {
+  const raw = allData()[k];
+  if (!raw) return { exercises: [], templateName: null };
+  if (Array.isArray(raw)) return { exercises: raw.map(normEx), templateName: null };
+  return { exercises: (raw.exercises || []).map(normEx), templateName: raw.templateName || null };
+}
+function setDay(k, day) {
+  const data = allData();
+  if (!day.exercises.length && !day.templateName) delete data[k];
+  else data[k] = { exercises: day.exercises, templateName: day.templateName || null };
+  save(KEY_DATA, data);
+}
+// 全記録を日付順に [{k, ex}] で
+function allEntries() {
+  const data = allData();
+  const out = [];
+  Object.keys(data).sort().forEach(k => {
+    const raw = data[k];
+    const exs = Array.isArray(raw) ? raw : (raw && raw.exercises) || [];
+    exs.forEach(e => out.push({ k, ex: normEx(e) }));
+  });
+  return out;
+}
+const workSets = ex => ex.sets.filter(s => s.done && !s.warmup && s.weight && s.reps);
+
+// ===================== 種目ライブラリ（ベンチ中心） =====================
+const LIB = [
+  { part: 'ベンチ', items: ['ベンチプレス', '止めベンチ', 'ナローベンチ', 'インクラインベンチプレス', 'ピンベンチ', 'スピードベンチ', 'フロアプレス', 'ボードプレス'] },
+  { part: '胸', items: ['ダンベルプレス', 'インクラインダンベルプレス', 'ディップス', 'ダンベルフライ', 'ケーブルクロスオーバー', 'チェストプレス', 'ペックフライ'] },
+  { part: '背中', items: ['懸垂', 'ラットプルダウン', 'ベントオーバーロウ', 'シーテッドロー', 'ダンベルロウ', 'デッドリフト', 'Tバーロウ', 'ストレートアームプルダウン'] },
+  { part: '肩', items: ['ショルダープレス', 'ダンベルショルダープレス', 'サイドレイズ', 'ケーブルサイドレイズ', 'フェイスプル', 'リアレイズ', 'アップライトロウ'] },
+  { part: '三頭', items: ['ライイングエクステンション', 'JMプレス', 'トライセプスプッシュダウン', 'フレンチプレス', 'オーバーヘッドエクステンション'] },
+  { part: '二頭', items: ['バーベルカール', 'ダンベルカール', 'インクラインダンベルカール', 'ハンマーカール', 'プリーチャーカール'] },
+  { part: '脚', items: ['スクワット', 'レッグプレス', 'ブルガリアンスクワット', 'ルーマニアンデッドリフト', 'レッグエクステンション', 'レッグカール', 'ランジ', 'カーフレイズ'] },
+  { part: '腹筋', items: ['クランチ', 'アブローラー', 'ハンギングレッグレイズ', 'プランク'] }
+];
+const BENCH_SET = new Set(LIB[0].items);
+function isBench(name) { const n = String(name || ''); return BENCH_SET.has(n) || (/ベンチ/.test(n) && !/ダンベル/.test(n)); }
+const isCompBench = name => name === 'ベンチプレス' || name === '止めベンチ';
+function partOf(name) {
+  if (isBench(name)) return 'ベンチ';
+  for (const g of LIB) if (g.items.includes(name)) return g.part;
+  const c = (getSettings().customEx || []).find(x => x.name === name);
+  if (c) return c.part;
+  const n = String(name || '');
+  if (/プレス|フライ|ディップ|胸|チェスト/.test(n)) return '胸';
+  if (/腹|クランチ|アブ|プランク|レッグレイズ/.test(n)) return '腹筋';
+  if (/レッグ|スクワット|ランジ|カーフ|脚/.test(n)) return '脚';
+  if (/カール|二頭/.test(n)) return '二頭';
+  if (/トライセプス|エクステンション|プッシュダウン|三頭/.test(n)) return '三頭';
+  if (/レイズ|肩|ショルダー|フェイス/.test(n)) return '肩';
+  if (/懸垂|ロウ|ロー|プル|背/.test(n)) return '背中';
+  if (/スクワット|デッド|レッグ|脚/.test(n)) return '脚';
+  return 'その他';
+}
+// 週のセット数を数える部位（ベンチ系は胸と三頭の両方に数える）
+function musclesOf(name) {
+  const p = partOf(name);
+  if (p === 'ベンチ') return /ナロー|JM/.test(name) ? ['胸', '三頭'] : ['胸', '三頭'];
+  if (name === 'ディップス') return ['胸', '三頭'];
+  return [p];
+}
+const BENCH_CUES = [
+  '肩甲骨を寄せて下げ、胸を張る',
+  '足裏全体で床を踏み、レッグドライブを効かせる',
+  'お尻はベンチから浮かせない（ブリッジは背中で）',
+  '手首は前腕の真上。親指は巻く',
+  'バーはみぞおち〜乳首ラインへ。肘は45°前後',
+  '下ろす前に息を吸って止め、腹圧を保つ',
+  '胸で止めてから押す（止めベンチは大会ルール通り静止）',
+  '押し上げはやや顔側へ弧を描く'
+];
+
+// 過去の同じ種目（指定日より前）
+function lastSession(name, beforeK) {
+  const data = allData();
+  const keys = Object.keys(data).filter(k => k < beforeK).sort().reverse();
+  for (const k of keys) {
+    const raw = data[k];
+    const exs = (Array.isArray(raw) ? raw : raw.exercises || []).map(normEx);
+    const ex = exs.find(e => e.name === name && workSets(e).length);
+    if (ex) return { k, ex };
+  }
+  return null;
+}
+function setsSummary(sets) {
+  const ws = sets.filter(s => !s.warmup && s.weight && s.reps);
+  if (!ws.length) return '';
+  // 同じ重量×回数はまとめる
+  const parts = [];
+  ws.forEach(s => {
+    const key = `${fmtKg(s.weight)}kg×${s.reps}`;
+    const last = parts[parts.length - 1];
+    if (last && last.key === key) last.n++; else parts.push({ key, n: 1 });
+  });
+  return parts.map(p => p.key + (p.n > 1 ? `×${p.n}` : '')).join(' / ');
+}
+function bestE1rm(ex) {
+  let best = null;
+  workSets(ex).forEach(s => { const v = e1rm(s.weight, s.reps, s.rir); if (v && (!best || v > best)) best = v; });
+  return best;
+}
+// プレート（片側）
+const PLATES = [25, 20, 15, 10, 5, 2.5, 1.25];
+const PLATE_COLOR = { 25: '#ef4444', 20: '#3b82f6', 15: '#eab308', 10: '#22c55e', 5: '#e5e7eb', 2.5: '#a3a3a3', 1.25: '#737373' };
+function platesFor(total) {
+  const bar = getSettings().bar || 20;
+  let side = (total - bar) / 2;
+  if (side < 0) return null;
+  const out = [];
+  for (const p of PLATES) { while (side >= p - 1e-9) { out.push(p); side -= p; } }
+  return { plates: out, rest: Math.round(side * 100) / 100 };
+}
+const platesText = w => { const r = platesFor(w); if (!r) return ''; return r.plates.length ? '片側 ' + r.plates.join('+') + (r.rest ? ` (+${r.rest})` : '') : 'バーのみ'; };
+
+// ===================== Dialog / Toast / Sheet =====================
+function dialog(message, opts) {
+  opts = opts || {};
+  return new Promise(resolve => {
+    const bg = document.createElement('div');
+    bg.className = 'dlg-bg';
+    bg.innerHTML = `<div class="dlg"><p></p><div class="row">${opts.cancel ? '<button class="btn block" data-v="0">キャンセル</button>' : ''}<button class="btn block ${opts.danger ? 'danger' : 'primary'}" data-v="1" style="${opts.danger ? 'background:#7f1d1d;border-color:#7f1d1d;color:#fff' : ''}">${esc(opts.ok || 'OK')}</button></div></div>`;
+    $('p', bg).textContent = message;
+    const close = v => { bg.remove(); resolve(v); };
+    bg.addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (b) close(b.dataset.v === '1'); else if (e.target === bg) close(false); });
+    document.body.appendChild(bg);
+  });
+}
+const confirmDlg = (m, ok, danger) => dialog(m, { cancel: true, ok: ok || 'OK', danger });
+let toastTimer = null;
+function toast(msg, err) {
+  let t = $('#toast');
+  if (!t) { t = document.createElement('div'); t.id = 'toast'; document.body.appendChild(t); }
+  t.className = 'toast' + (err ? ' err' : '');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.style.display = 'none'; }, 2200);
+}
+window.alert = m => dialog(m);
+
+// シートは常に1枚だけ（開くと前のシートは閉じる）
+function openSheet(title, bodyHtml, opts) {
+  closeSheet();
+  opts = opts || {};
+  const bg = document.createElement('div');
+  bg.className = 'sheet-bg';
+  bg.id = 'sheetBg';
+  bg.innerHTML = `<div class="sheet ${opts.full ? 'full' : ''}"><div class="sheet-h">${opts.back ? '<button class="link" data-sheet-back>‹ 戻る</button>' : ''}<h3 style="flex:1">${esc(title)}</h3><button class="icon-btn" data-sheet-close aria-label="閉じる"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="sheet-body">${bodyHtml}</div></div>`;
+  bg.addEventListener('click', e => {
+    if (e.target === bg || e.target.closest('[data-sheet-close]')) closeSheet();
+    if (e.target.closest('[data-sheet-back]') && opts.back) opts.back();
+  });
+  document.body.appendChild(bg);
+  document.body.style.overflow = 'hidden';
+  return $('.sheet-body', bg);
+}
+function closeSheet() { const s = $('#sheetBg'); if (s) s.remove(); document.body.style.overflow = ''; }
+
+// ===================== Navigation =====================
+let currentView = 'home';
+const renderers = {};
+function show(view) {
+  closeSheet();
+  currentView = view;
+  ['home', 'log', 'prog', 'stats'].forEach(v => $('#view-' + v).classList.toggle('hidden', v !== view));
+  $$('.nav button').forEach(b => b.classList.toggle('on', b.dataset.view === view));
+  if (renderers[view]) renderers[view]();
+  window.scrollTo(0, 0);
+}
+$$('.nav button').forEach(b => b.addEventListener('click', () => show(b.dataset.view)));
+
+// ===================== Rest timer（画面を離れても 通知＋音） =====================
+let restTick = null, audioCtx = null, restAudio = null, restAudioUrl = null, pageTimeout = null;
+function beep() {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    [0, 0.3, 0.6].forEach(t => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.frequency.value = 880; o.connect(g); g.connect(audioCtx.destination);
+      g.gain.setValueAtTime(0.3, audioCtx.currentTime + t); g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + t + 0.22);
+      o.start(audioCtx.currentTime + t); o.stop(audioCtx.currentTime + t + 0.25);
+    });
+  } catch (e) {}
+  vibrate();
+}
+function vibrate() { try { navigator.vibrate && navigator.vibrate([300, 150, 300, 150, 300]); } catch (e) {} }
+// 「無音（休憩秒数）＋ 最後にアラーム音」のWAVを作って再生。バックグラウンドでも鳴らすため
+function buildRestWav(sec) {
+  const rate = 8000, beepLen = 1.6, total = Math.round((sec + beepLen) * rate);
+  const buf = new ArrayBuffer(44 + total), v = new DataView(buf);
+  const wr = (o, str) => { for (let i = 0; i < str.length; i++) v.setUint8(o + i, str.charCodeAt(i)); };
+  wr(0, 'RIFF'); v.setUint32(4, 36 + total, true); wr(8, 'WAVE'); wr(12, 'fmt ');
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, rate, true); v.setUint32(28, rate, true);
+  v.setUint16(32, 1, true); v.setUint16(34, 8, true); wr(36, 'data'); v.setUint32(40, total, true);
+  const start = Math.round(sec * rate);
+  for (let i = 0; i < total; i++) {
+    let s = 128;
+    if (i >= start) {
+      const t = (i - start) / rate, ph = t % 0.4;
+      if (ph < 0.25) s = 128 + Math.round(90 * Math.sin(2 * Math.PI * 880 * t));
+    }
+    v.setUint8(44 + i, s);
+  }
+  return new Blob([buf], { type: 'audio/wav' });
+}
+function stopRestAudio() {
+  try { if (restAudio) { restAudio.pause(); restAudio.src = ''; } } catch (e) {}
+  if (restAudioUrl) { URL.revokeObjectURL(restAudioUrl); restAudioUrl = null; }
+  restAudio = null;
+}
+function playRestAudio(sec) {
+  stopRestAudio();
+  if (!getSettings().bgSound) return;
+  try {
+    restAudioUrl = URL.createObjectURL(buildRestWav(Math.max(1, sec)));
+    restAudio = new Audio(restAudioUrl);
+    restAudio.setAttribute('playsinline', '');
+    const p = restAudio.play();
+    if (p && p.catch) p.catch(() => {});
+  } catch (e) {}
+}
+// 通知（Service Worker が休憩終了時刻に通知を出す）
+async function swPost(msg) {
+  try {
+    if (!('serviceWorker' in navigator)) return false;
+    const reg = await navigator.serviceWorker.ready;
+    const sw = reg.active || navigator.serviceWorker.controller;
+    if (!sw) return false;
+    sw.postMessage(msg);
+    return true;
+  } catch (e) { return false; }
+}
+async function showLocalNotification(title, body) {
+  try {
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    const opts = { body, tag: 'forge-rest', renotify: true, vibrate: [300, 150, 300], icon: 'icon-192.png', badge: 'icon-192.png' };
+    if ('serviceWorker' in navigator) { const reg = await navigator.serviceWorker.getRegistration(); if (reg) return reg.showNotification(title, opts); }
+    new Notification(title, opts);
+  } catch (e) {}
+}
+function notifyState() {
+  if (typeof Notification === 'undefined') return 'unsupported';
+  return Notification.permission; // granted / denied / default
+}
+async function askNotify() {
+  if (typeof Notification === 'undefined') { await dialog('このブラウザは通知に対応していません。\niPhoneは「ホーム画面に追加」したアプリから開くと通知を使えます（iOS 16.4以降）。'); return false; }
+  if (Notification.permission === 'granted') return true;
+  if (Notification.permission === 'denied') { await dialog('通知がブロックされています。\n端末の設定 → このアプリ（またはブラウザ）→ 通知 から許可してください。'); return false; }
+  try { const r = await Notification.requestPermission(); return r === 'granted'; } catch (e) { return false; }
+}
+function startRest(sec, nextText) {
+  try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); } catch (e) {}
+  const end = Date.now() + sec * 1000;
+  save(KEY_REST, { end, total: sec, next: nextText || '', beeped: false });
+  playRestAudio(sec);
+  swPost({ type: 'rest-start', end, title: 'FORGE 休憩終了', body: nextText ? `次のセットへ（${nextText.replace(/^次: /, '')}）` : '次のセットへ' });
+  // 通知の許可がまだなら、最初のタイマー開始時に1回だけ聞く（ユーザー操作の中で）
+  if (notifyState() === 'default' && !getSettings().notifyAsked) { setSettings({ notifyAsked: true }); askNotify(); }
+  runRest();
+}
+function stopRest() {
+  localStorage.removeItem(KEY_REST);
+  clearInterval(restTick); restTick = null; clearTimeout(pageTimeout);
+  stopRestAudio();
+  swPost({ type: 'rest-cancel' });
+  $('#timer').classList.add('hidden');
+}
+function runRest() {
+  clearInterval(restTick); clearTimeout(pageTimeout);
+  const st = load(KEY_REST, null);
+  if (!st) { $('#timer').classList.add('hidden'); return; }
+  const el = $('#timer');
+  el.classList.remove('hidden');
+  $('#timerNext').textContent = st.next || '';
+  const finish = () => {
+    const cur = load(KEY_REST, null);
+    if (!cur || cur.beeped) return;
+    cur.beeped = true; save(KEY_REST, cur);
+    // 音声ファイルが鳴っていない時だけ画面側で鳴らす（二重に鳴らさない）
+    const audioPlaying = restAudio && !restAudio.paused && !restAudio.ended;
+    if (!document.hidden) { if (!audioPlaying) beep(); else vibrate(); }
+    else showLocalNotification('FORGE 休憩終了', '次のセットへ');
+  };
+  const left0 = st.end - Date.now();
+  if (left0 > 0) pageTimeout = setTimeout(finish, left0 + 50);
+  const tick = () => {
+    const left = Math.round((st.end - Date.now()) / 1000);
+    if (left <= 0) {
+      el.classList.add('end');
+      $('#timerLabel').textContent = '休憩終了 — 次のセットへ';
+      $('#timerT').textContent = '0:00';
+      $('#timerBar').style.width = '100%';
+      if (left > -3) finish();
+      if (left < -60) stopRest();
+      return;
+    }
+    el.classList.remove('end');
+    $('#timerLabel').textContent = '休憩';
+    $('#timerT').textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
+    $('#timerBar').style.width = (100 - left / st.total * 100) + '%';
+  };
+  tick();
+  restTick = setInterval(tick, 500);
+}
+function addRest(sec) {
+  const st = load(KEY_REST, null); if (!st) return;
+  st.end = Math.max(st.end, Date.now()) + sec * 1000; st.total += sec; st.beeped = false; save(KEY_REST, st);
+  playRestAudio(Math.round((st.end - Date.now()) / 1000));
+  swPost({ type: 'rest-start', end: st.end, title: 'FORGE 休憩終了', body: '次のセットへ' });
+  runRest();
+}
+$('#timerPlus').addEventListener('click', () => addRest(30));
+$('#timerSkip').addEventListener('click', stopRest);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) runRest(); });
+
+// タイマーボタン（好きな時間で手動スタート）
+function openTimerSheet() {
+  const s = getSettings();
+  const st = notifyState();
+  const stTxt = { granted: '<span class="pill ok">オン</span>', denied: '<span class="pill warn">ブロック中</span>', default: '<span class="pill gray">未設定</span>', unsupported: '<span class="pill gray">非対応</span>' }[st];
+  let custom = s.lastTimer || 120;
+  const body = openSheet('休憩タイマー', `
+    <div class="grid3" style="margin-bottom:12px">${[60, 90, 120, 180, 240, 300].map(v => `<button class="btn" data-sec="${v}" style="min-height:52px;font-size:16px">${v < 120 ? v + '秒' : v / 60 + '分'}</button>`).join('')}</div>
+    <div class="card" style="padding:12px"><div class="card-title">好きな時間</div>
+      <div class="row"><button class="btn" data-adj="-15">−15秒</button><div id="custT" style="flex:1;text-align:center;font-size:26px;font-weight:800"></div><button class="btn" data-adj="15">＋15秒</button></div>
+      <button class="btn primary block" data-start-custom style="margin-top:10px">スタート</button></div>
+    <div class="card" style="padding:12px"><div class="card-title">画面を離れたとき</div>
+      <div class="row between" style="margin-bottom:8px"><span class="small">通知 ${stTxt}</span>${st !== 'granted' && st !== 'unsupported' ? '<button class="btn sm primary" data-notify>通知を許可</button>' : ''}</div>
+      <label class="row between small" style="margin-bottom:8px"><span>アプリを閉じても音を鳴らす</span><input type="checkbox" id="bgSound" ${s.bgSound ? 'checked' : ''} style="width:22px;height:22px;accent-color:var(--accent)"></label>
+      <div class="tiny dim">音はタイマー開始時に無音の音声を流し、終わりにアラームを鳴らす仕組みです。iPhoneではオンにすると再生中の音楽が止まることがあります。</div>
+      <button class="btn sm block" data-test style="margin-top:10px">音と通知をテスト</button></div>`);
+  const drawC = () => { $('#custT').textContent = `${Math.floor(custom / 60)}:${String(custom % 60).padStart(2, '0')}`; };
+  drawC();
+  body.addEventListener('click', async e => {
+    const sb = e.target.closest('[data-sec]');
+    if (sb) { const v = +sb.dataset.sec; setSettings({ lastTimer: v }); closeSheet(); startRest(v, ''); return; }
+    const adj = e.target.closest('[data-adj]'); if (adj) { custom = Math.max(15, Math.min(900, custom + +adj.dataset.adj)); drawC(); return; }
+    if (e.target.closest('[data-start-custom]')) { setSettings({ lastTimer: custom }); closeSheet(); startRest(custom, ''); return; }
+    if (e.target.closest('[data-notify]')) { const ok = await askNotify(); toast(ok ? '通知をオンにしました' : '通知はオフのままです', !ok); openTimerSheet(); return; }
+    if (e.target.closest('[data-test]')) { beep(); playRestAudio(0); showLocalNotification('FORGE 通知テスト', '休憩が終わるとこのように通知します'); toast('テスト中：音と通知を確認してください'); }
+  });
+  $('#bgSound', body).addEventListener('change', e => setSettings({ bgSound: e.target.checked }));
+}
+$('#openTimer').addEventListener('click', openTimerSheet);
+
+
+// ===================== 記録（ログ） =====================
+let logDate = today();
+const openCues = {};
+function renderLog() {
+  const v = $('#view-log');
+  const day = getDay(logDate);
+  const mon = mondayOf(logDate);
+  const data = allData();
+  let weekHtml = '';
+  for (let i = 0; i < 7; i++) {
+    const k = addDays(mon, i), d = parseDk(k);
+    const has = !!data[k];
+    weekHtml += `<button data-date="${k}" class="${k === logDate ? 'sel' : ''}">${WD[d.getDay()]}<b>${d.getDate()}</b><span class="dot ${has ? 'on' : ''}"></span></button>`;
+  }
+  const isToday = logDate === today();
+  let html = `
+    <div class="datebar">
+      <button class="icon-btn" data-shift="-7" aria-label="前の週">‹</button>
+      <div class="d">${fmtD(logDate)}${isToday ? ' <span class="pill ok">今日</span>' : ''}</div>
+      ${isToday ? '' : '<button class="btn sm" data-today>今日</button>'}
+      <button class="icon-btn" data-shift="7" aria-label="次の週">›</button>
+    </div>
+    <div class="week">${weekHtml}</div>`;
+  if (day.templateName) html += `<div class="row between" style="margin-bottom:10px"><span class="pill">${esc(day.templateName)}</span></div>`;
+  if (!day.exercises.length) {
+    const nx = nextSession();
+    html += `<div class="card empty">この日の記録はまだありません。<div style="margin-top:12px;display:grid;gap:8px">
+      ${nx ? `<button class="btn primary block" data-load-next>次のセッション「${esc(nx.name)}」を読み込む</button>` : ''}
+      <button class="btn block" data-add-ex>＋ 種目を追加</button>
+      <button class="btn ghost block" data-pick-tpl>プログラムから選ぶ</button></div></div>`;
+  } else {
+    day.exercises.forEach((ex, i) => { html += exCard(ex, i); });
+    html += `<div style="display:grid;gap:8px;margin-top:4px">
+      <button class="btn block" data-add-ex>＋ 種目を追加</button>
+      <div class="grid2"><button class="btn sm" data-pick-tpl>プログラムから追加</button><button class="btn sm" data-save-tpl>この日をセッションとして保存</button></div>
+      <button class="btn ok block" data-finish style="margin-top:6px;min-height:52px;font-size:16px">🏁 トレーニング終了（バックアップ）</button></div>`;
+  }
+  v.innerHTML = html;
+}
+function exCard(ex, i) {
+  const bench = isBench(ex.name);
+  const prev = lastSession(ex.name, logDate);
+  const best = bestE1rm(ex);
+  let sets = `<div class="set-head"><span>#</span><span>重量 kg</span><span>回数</span><span>RIR</span><span>完了</span></div>`;
+  let wn = 0;
+  ex.sets.forEach((s, j) => {
+    const label = s.warmup ? 'W' : String(++wn);
+    const est = !s.warmup && s.weight && s.reps ? e1rm(s.weight, s.reps, s.rir) : null;
+    const plates = bench && s.weight ? platesText(s.weight) : '';
+    sets += `<div class="set ${s.done ? 'done' : ''} ${s.warmup ? 'wu' : ''}" data-ex="${i}" data-set="${j}">
+      <button class="setno" data-act="menu" title="セットの操作">${label}</button>
+      <div class="stepper"><button data-act="w-">−</button><input inputmode="decimal" data-f="weight" value="${s.weight == null ? '' : fmtKg(s.weight)}" placeholder="kg"><button data-act="w+">＋</button></div>
+      <div class="stepper"><button data-act="r-">−</button><input inputmode="numeric" data-f="reps" value="${s.reps == null ? '' : s.reps}" placeholder="回"><button data-act="r+">＋</button></div>
+      <select class="rir" data-f="rir"><option value="">-</option>${[0, 1, 2, 3, 4, 5].map(n => `<option value="${n}" ${s.rir === n ? 'selected' : ''}>${n}</option>`).join('')}</select>
+      <button class="check" data-act="done" aria-label="完了"><svg fill="none" stroke="#fff" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></button>
+      ${(est || plates) ? `<div class="set-sub">${est ? `<span>推定1RM ${fmtKg(Math.round(est * 10) / 10)}kg</span>` : ''}${plates ? `<span>${plates}</span>` : ''}</div>` : ''}
+    </div>`;
+  });
+  const cues = bench && isCompBench(ex.name) ? `<details class="cues" data-cues="${i}" ${openCues[i] ? 'open' : ''}><summary>✓ セットアップチェック（${BENCH_CUES.length}項目）</summary>${BENCH_CUES.map((c, n) => `<label class="cue"><input type="checkbox">${esc(c)}</label>`).join('')}</details>` : '';
+  return `<div class="ex ${bench ? 'bench' : ''}" data-exi="${i}">
+    <div class="ex-head"><div style="min-width:0">
+      <div class="ex-name">${esc(ex.name)}</div>
+      ${ex.plan ? `<div class="ex-plan">予定: ${esc(ex.plan)}</div>` : ''}
+      <div class="ex-prev">${prev ? `前回 ${fmtD(prev.k)}: ${esc(setsSummary(prev.ex.sets))}` : '前回の記録なし'}</div>
+      ${best ? `<div class="tiny" style="color:var(--accent2);margin-top:2px">今日の推定1RM ${fmtKg(Math.round(best * 10) / 10)}kg</div>` : ''}
+    </div><button class="icon-btn" data-act="exmenu" aria-label="種目の操作" style="flex-shrink:0">⋯</button></div>
+    ${cues}
+    <div class="sets">${sets}</div>
+    <div class="ex-foot"><button class="btn sm" data-act="addset">＋ セット</button><button class="btn sm ghost" data-act="addwu">＋ アップ</button>${ex.note ? `<span class="small muted" style="align-self:center">📝 ${esc(ex.note)}</span>` : ''}</div>
+  </div>`;
+}
+function mutateDay(fn, rerender) {
+  const day = getDay(logDate);
+  fn(day);
+  setDay(logDate, day);
+  if (rerender !== false) renderLog();
+}
+const restFor = name => isBench(name) ? (getSettings().restMain || 180) : (getSettings().restAcc || 90);
+
+$('#view-log').addEventListener('click', async e => {
+  const t = e.target;
+  const dateBtn = t.closest('[data-date]');
+  if (dateBtn) { logDate = dateBtn.dataset.date; return renderLog(); }
+  if (t.closest('[data-shift]')) { logDate = addDays(logDate, Number(t.closest('[data-shift]').dataset.shift)); return renderLog(); }
+  if (t.closest('[data-today]')) { logDate = today(); return renderLog(); }
+  if (t.closest('[data-add-ex]')) return openExercisePicker();
+  if (t.closest('[data-pick-tpl]')) return openTemplatePicker();
+  if (t.closest('[data-save-tpl]')) return saveDayAsTemplate();
+  if (t.closest('[data-finish]')) return finishWorkout(logDate);
+  if (t.closest('[data-load-next]')) { const nx = nextSession(); if (nx) loadTemplateInto(nx, logDate); return; }
+  const actEl = t.closest('[data-act]');
+  if (!actEl) return;
+  const act = actEl.dataset.act;
+  const setEl = actEl.closest('[data-set]');
+  const exEl = actEl.closest('[data-exi]');
+  const i = exEl ? Number(exEl.dataset.exi) : null;
+  if (setEl) {
+    const j = Number(setEl.dataset.set);
+    const step = getSettings().step || 2.5;
+    if (act === 'w-' || act === 'w+') return mutateDay(d => { const s = d.exercises[i].sets[j]; s.weight = Math.max(0, (s.weight || 0) + (act === 'w+' ? step : -step)); });
+    if (act === 'r-' || act === 'r+') return mutateDay(d => { const s = d.exercises[i].sets[j]; s.reps = Math.max(0, (s.reps || 0) + (act === 'r+' ? 1 : -1)); });
+    if (act === 'done') {
+      let startTimer = false, name = '', nextTxt = '';
+      mutateDay(d => {
+        const ex = d.exercises[i], s = ex.sets[j];
+        if (!s.done && (s.weight == null || !s.reps)) { toast('重量と回数を入れてください', true); return; }
+        s.done = !s.done;
+        if (s.done) {
+          startTimer = true; name = ex.name;
+          const nextSet = ex.sets.find((x, n) => n > j && !x.done);
+          if (nextSet && nextSet.weight) nextTxt = `次: ${fmtKg(nextSet.weight)}kg×${nextSet.reps || '-'}`;
+          else { const nextEx = d.exercises.slice(i + 1).find(x => x.sets.some(y => !y.done)); if (nextEx) nextTxt = '次: ' + nextEx.name; }
+        }
+      });
+      if (startTimer) {
+        const dd = getDay(logDate);
+        const all = dd.exercises.flatMap(x => x.sets);
+        if (all.length && all.every(x => x.done)) {
+          takeSnapshot('全セット完了');
+          stopRest();
+          toast('全セット完了！お疲れさまでした\n下の「トレーニング終了」でバックアップ');
+        } else startRest(dd.exercises[i].sets[j].warmup ? 60 : restFor(name), nextTxt);
+      }
+      return;
+    }
+    if (act === 'menu') return openSetMenu(i, j);
+  }
+  if (act === 'addset' || act === 'addwu') return mutateDay(d => {
+    const ex = d.exercises[i];
+    const src = [...ex.sets].reverse().find(s => act === 'addwu' ? s.warmup : !s.warmup) || ex.sets[ex.sets.length - 1];
+    const ns = { weight: src ? src.weight : null, reps: src ? src.reps : null, rir: null, warmup: act === 'addwu', done: false };
+    if (act === 'addwu') { const firstWork = ex.sets.findIndex(s => !s.warmup); ex.sets.splice(firstWork < 0 ? ex.sets.length : firstWork, 0, ns); }
+    else ex.sets.push(ns);
+  });
+  if (act === 'exmenu') return openExerciseMenu(i);
+});
+$('#view-log').addEventListener('change', e => {
+  const f = e.target.dataset.f;
+  const setEl = e.target.closest('[data-set]');
+  if (!f || !setEl) return;
+  const i = Number(setEl.dataset.ex), j = Number(setEl.dataset.set);
+  mutateDay(d => {
+    const s = d.exercises[i].sets[j];
+    if (f === 'weight') s.weight = num(e.target.value);
+    if (f === 'reps') { const r = num(e.target.value); s.reps = r == null ? null : Math.round(r); }
+    if (f === 'rir') s.rir = e.target.value === '' ? null : Number(e.target.value);
+  });
+});
+$('#view-log').addEventListener('toggle', e => { if (e.target.dataset && e.target.dataset.cues != null) openCues[e.target.dataset.cues] = e.target.open; }, true);
+
+function openSetMenu(i, j) {
+  const s = getDay(logDate).exercises[i].sets[j];
+  const body = openSheet('セットの操作', `
+    <div style="display:grid;gap:8px">
+      <button class="btn block" data-m="wu">${s.warmup ? '本番セットにする' : 'アップ（ウォームアップ）にする'}</button>
+      <button class="btn block" data-m="dup">このセットを複製</button>
+      <button class="btn block danger" data-m="del">このセットを削除</button>
+    </div>`);
+  body.addEventListener('click', e => {
+    const m = e.target.closest('[data-m]'); if (!m) return;
+    mutateDay(d => {
+      const sets = d.exercises[i].sets;
+      if (m.dataset.m === 'wu') sets[j].warmup = !sets[j].warmup;
+      if (m.dataset.m === 'dup') sets.splice(j + 1, 0, Object.assign({}, sets[j], { done: false }));
+      if (m.dataset.m === 'del') sets.splice(j, 1);
+    });
+    closeSheet();
+  });
+}
+function openExerciseMenu(i) {
+  const ex = getDay(logDate).exercises[i];
+  const body = openSheet(ex.name, `
+    <div class="field"><label>メモ</label><input class="inp" id="exNote" value="${esc(ex.note)}" placeholder="例：左肩に違和感、グリップ81cm"></div>
+    <div class="field"><label>予定（目安）</label><input class="inp" id="exPlan" value="${esc(ex.plan)}" placeholder="例：80% 3回×5セット"></div>
+    <div style="display:grid;gap:8px">
+      <button class="btn primary block" data-m="save">保存</button>
+      <div class="grid2"><button class="btn" data-m="up">↑ 上へ</button><button class="btn" data-m="down">↓ 下へ</button></div>
+      <button class="btn block" data-m="hist">この種目の履歴</button>
+      <button class="btn block danger" data-m="del">この種目を削除</button>
+    </div>`);
+  body.addEventListener('click', async e => {
+    const m = e.target.closest('[data-m]'); if (!m) return;
+    const k = m.dataset.m;
+    if (k === 'save') { const note = $('#exNote').value.trim(), plan = $('#exPlan').value.trim(); mutateDay(d => { d.exercises[i].note = note; d.exercises[i].plan = plan; }); closeSheet(); toast('保存しました'); }
+    if (k === 'up' || k === 'down') { mutateDay(d => { const to = i + (k === 'up' ? -1 : 1); if (to < 0 || to >= d.exercises.length) return; const x = d.exercises.splice(i, 1)[0]; d.exercises.splice(to, 0, x); }); closeSheet(); }
+    if (k === 'hist') openHistory(ex.name);
+    if (k === 'del') { if (await confirmDlg(`「${ex.name}」をこの日の記録から削除しますか？`, '削除する', true)) { mutateDay(d => { d.exercises.splice(i, 1); }); closeSheet(); toast('削除しました'); } }
+  });
+}
+function openHistory(name) {
+  const rows = allEntries().filter(x => x.ex.name === name && workSets(x.ex).length).reverse().slice(0, 40);
+  openSheet(name + ' の履歴', rows.length ? rows.map(r => `<div class="item"><div class="item-main"><div class="item-title">${fmtD(r.k)}</div><div class="item-sub">${esc(setsSummary(r.ex.sets))}</div></div>${bestE1rm(r.ex) ? `<span class="pill">${fmtKg(Math.round(bestE1rm(r.ex)))}kg</span>` : ''}</div>`).join('') : '<div class="empty">まだ記録がありません</div>');
+}
+
+// 種目を追加（新しい種目には前回の内容を自動で入れる）
+function newExerciseFor(name, k) {
+  const prev = lastSession(name, k);
+  const sets = prev ? prev.ex.sets.filter(s => s.weight && s.reps).map(s => ({ weight: s.weight, reps: s.reps, rir: null, warmup: s.warmup, done: false })) : [{ weight: null, reps: null, rir: null, warmup: false, done: false }];
+  return { name, bodyPart: partOf(name), note: '', plan: '', sets };
+}
+function openExercisePicker() {
+  const custom = getSettings().customEx || [];
+  const used = {};
+  allEntries().forEach(x => { used[x.ex.name] = (used[x.ex.name] || 0) + 1; });
+  const groups = LIB.map(g => ({ part: g.part, items: g.items.slice() }));
+  custom.forEach(c => { const g = groups.find(x => x.part === c.part); if (g && !g.items.includes(c.name)) g.items.push(c.name); });
+  Object.keys(used).forEach(n => { if (!groups.some(g => g.items.includes(n))) { const p = partOf(n); let g = groups.find(x => x.part === p); if (!g) { g = { part: p, items: [] }; groups.push(g); } g.items.push(n); } });
+  let part = 'ベンチ';
+  const body = openSheet('種目を追加', `
+    <input class="inp" id="exSearch" placeholder="種目を検索 / 新しい種目名" style="margin-bottom:10px">
+    <div class="tabs" id="partTabs"></div>
+    <div id="exList"></div>`, { full: true });
+  const draw = () => {
+    const q = $('#exSearch').value.trim();
+    $('#partTabs').innerHTML = groups.map(g => `<button data-part="${esc(g.part)}" class="${g.part === part && !q ? 'on' : ''}">${esc(g.part)}</button>`).join('');
+    let items = q ? groups.flatMap(g => g.items).filter(n => n.includes(q)) : (groups.find(g => g.part === part) || { items: [] }).items;
+    let h = items.map(n => { const ls = lastSession(n, logDate); return `<button class="pick" data-name="${esc(n)}"><span><b>${esc(n)}</b><br><span class="small muted">${ls ? '前回 ' + esc(setsSummary(ls.ex.sets)) : '記録なし'}</span></span><span class="link">追加</span></button>`; }).join('');
+    if (q && !items.includes(q)) h += `<button class="pick" data-new="${esc(q)}"><span><b>「${esc(q)}」を新しい種目として追加</b></span><span class="link">＋</span></button>`;
+    $('#exList').innerHTML = h || '<div class="empty">種目がありません</div>';
+  };
+  draw();
+  $('#exSearch').addEventListener('input', draw);
+  body.addEventListener('click', e => {
+    const tb = e.target.closest('[data-part]'); if (tb) { part = tb.dataset.part; $('#exSearch').value = ''; return draw(); }
+    const nb = e.target.closest('[data-new]');
+    if (nb) { const name = nb.dataset.new; const s = getSettings(); s.customEx = (s.customEx || []).concat([{ name, part: partOf(name) === 'その他' ? part : partOf(name) }]); setSettings({ customEx: s.customEx }); addEx(name); return; }
+    const pb = e.target.closest('[data-name]'); if (pb) addEx(pb.dataset.name);
+  });
+  function addEx(name) {
+    mutateDay(d => { d.exercises.push(newExerciseFor(name, logDate)); });
+    closeSheet();
+    if (currentView !== 'log') show('log');
+    toast(`${name} を追加しました`);
+  }
+}
+
+// ===================== セッション（テンプレ）とプログラム =====================
+const DEFAULT_GROUP = 'マイセッション';
+function getTemplates() {
+  const t = load(KEY_TPL, []);
+  if (!Array.isArray(t)) return [];
+  return t.map((x, i) => Object.assign({}, x, { order: typeof x.order === 'number' ? x.order : i })).sort((a, b) => a.order - b.order);
+}
+function saveTemplates(list) { list.forEach((x, i) => { x.order = i; }); save(KEY_TPL, list); }
+const groupOf = t => (t && t.group && String(t.group).trim()) || DEFAULT_GROUP;
+function groupNames(list) { const out = []; (list || getTemplates()).forEach(t => { const g = groupOf(t); if (!out.includes(g)) out.push(g); }); return out; }
+function uniqueGroup(base) { const n = groupNames(); if (!n.includes(base)) return base; let i = 2; while (n.includes(`${base} (${i})`)) i++; return `${base} (${i})`; }
+function nextSession() {
+  const all = getTemplates();
+  if (!all.length) return null;
+  const seq = load(KEY_SEQ, {});
+  const last = all.find(t => t.id === seq.lastId);
+  if (last) { const g = all.filter(t => groupOf(t) === groupOf(last)); return g[(g.findIndex(t => t.id === last.id) + 1) % g.length]; }
+  const ag = getSettings().activeGroup;
+  return all.find(t => groupOf(t) === ag) || all[0];
+}
+const kgFor = (r, oneRM) => r.kg != null ? r.kg : (r.pct && oneRM ? roundTo(oneRM * r.pct, getSettings().step || 2.5) : null);
+function rxText(rx, oneRM) {
+  return (rx || []).map(r => { const kg = kgFor(r, oneRM); return `${r.pct ? Math.round(r.pct * 100) + '% ' : ''}${kg != null ? kg + 'kg ' : ''}${r.reps}回×${r.sets}セット`; }).join(' → ');
+}
+function exPlanText(e, oneRM) {
+  if (e.rx && e.rx.length) return rxText(e.rx, oneRM);
+  if (e.setCount) return [e.targetWeight ? e.targetWeight + 'kg' : '', e.targetReps ? e.targetReps + '回' : '', e.setCount + 'セット'].filter(Boolean).join('×');
+  return e.plan || '';
+}
+function parsePlanSets(plan) {
+  const p = String(plan || '');
+  let m = p.match(/(\d+)\s*[×x]\s*(\d+)/); // 3×8-12 → 3セット 8回
+  if (m && !/回/.test(p)) return { sets: +m[1], reps: +m[2] };
+  m = p.match(/(\d+)(?:-\d+)?回\s*[×x]\s*(\d+)セット/);
+  if (m) return { sets: +m[2], reps: +m[1] };
+  return null;
+}
+async function loadTemplateInto(t, k) {
+  const s = getSettings();
+  const needs1RM = (t.exercises || []).some(e => (e.rx || []).some(r => r.pct && r.kg == null));
+  if (needs1RM && !s.oneRM) {
+    await dialog('このセッションは1RMの％で重量を計算します。\n先にプログラム画面でベンチの1RMを入れてください。');
+    show('prog'); return;
+  }
+  const day = getDay(k);
+  let added = 0;
+  (t.exercises || []).forEach(e => {
+    if (day.exercises.some(x => x.name === e.name)) return;
+    const sets = [];
+    if (e.rx && e.rx.length) {
+      const top = Math.max(...e.rx.map(r => kgFor(r, s.oneRM) || 0));
+      if (isBench(e.name) && e.warmup !== false && top >= 50) {
+        const bar = s.bar || 20;
+        [[bar, 10], [top * 0.5, 5], [top * 0.7, 3], [top * 0.85, 1]].forEach(([w, r]) => {
+          const kg = Math.max(bar, roundTo(w, s.step || 2.5));
+          if (kg < top && !sets.some(x => x.weight === kg)) sets.push({ weight: kg, reps: r, rir: null, warmup: true, done: false });
+        });
+      }
+      const prevW = workSets((lastSession(e.name, k) || { ex: { sets: [] } }).ex);
+      let pi = 0;
+      e.rx.forEach(r => { for (let n = 0; n < r.sets; n++) { const kg = kgFor(r, s.oneRM); sets.push({ weight: kg != null ? kg : (prevW[pi] || prevW[prevW.length - 1] || {}).weight || null, reps: r.reps, rir: null, warmup: false, done: false }); pi++; } });
+    } else if (e.setCount) {
+      for (let n = 0; n < e.setCount; n++) sets.push({ weight: num(e.targetWeight), reps: num(e.targetReps), rir: null, warmup: false, done: false });
+    } else {
+      const ps = parsePlanSets(e.plan);
+      const prev = lastSession(e.name, k);
+      const pw = prev ? workSets(prev.ex) : [];
+      const n = ps ? ps.sets : (pw.length || 3);
+      for (let x = 0; x < n; x++) sets.push({ weight: pw[x] ? pw[x].weight : (pw[0] ? pw[0].weight : null), reps: ps ? ps.reps : (pw[x] ? pw[x].reps : null), rir: null, warmup: false, done: false });
+    }
+    day.exercises.push({ name: e.name, bodyPart: partOf(e.name), note: '', plan: exPlanText(e, s.oneRM), sets });
+    added++;
+  });
+  day.templateName = t.name;
+  setDay(k, day);
+  save(KEY_SEQ, { lastId: t.id, lastName: t.name, lastDate: k });
+  setSettings({ activeGroup: groupOf(t) });
+  logDate = k;
+  show('log');
+  toast(`「${t.name}」を読み込みました` + (added ? '' : '\n（種目はすでに入っています）'));
+}
+function openTemplatePicker() {
+  const list = getTemplates();
+  const nx = nextSession();
+  const oneRM = getSettings().oneRM;
+  if (!list.length) { openSheet('プログラムから選ぶ', `<div class="empty">まだプログラムがありません。<br><br><button class="btn primary" data-go-prog>プログラムを作る</button></div>`).addEventListener('click', e => { if (e.target.closest('[data-go-prog]')) show('prog'); }); return; }
+  const body = openSheet('プログラムから選ぶ', groupNames(list).map(g => `<div class="card-title" style="margin-top:6px">${esc(g)}</div>` + list.filter(t => groupOf(t) === g).map(t => `<button class="pick" data-tid="${esc(t.id)}"><span style="min-width:0"><b>${esc(t.name)}</b> ${nx && nx.id === t.id ? '<span class="pill ok">次</span>' : ''}<br><span class="small muted">${esc((t.exercises || []).map(e => e.name).join('・'))}</span></span><span class="link">読込</span></button>`).join('')).join(''), { full: true });
+  body.addEventListener('click', e => { const b = e.target.closest('[data-tid]'); if (!b) return; const t = getTemplates().find(x => x.id === b.dataset.tid); if (t) loadTemplateInto(t, logDate); });
+}
+async function saveDayAsTemplate() {
+  const day = getDay(logDate);
+  if (!day.exercises.length) return;
+  const exercises = day.exercises.map(ex => {
+    const ws = ex.sets.filter(s => !s.warmup && s.weight && s.reps);
+    if (!ws.length) return { name: ex.name, plan: ex.plan || '' };
+    const rx = [];
+    ws.forEach(s => { const last = rx[rx.length - 1]; if (last && last.kg === s.weight && last.reps === s.reps) last.sets++; else rx.push({ kg: s.weight, reps: s.reps, sets: 1 }); });
+    return { name: ex.name, rx };
+  });
+  const name = (day.templateName ? day.templateName + ' ' : '') + fmtD(logDate) + 'のメニュー';
+  const list = getTemplates();
+  list.push({ id: 'tpl_' + Date.now(), name, group: DEFAULT_GROUP, exercises });
+  saveTemplates(list);
+  toast(`「${name}」を保存しました\n（プログラム画面の「${DEFAULT_GROUP}」）`);
+}
+
+// ---- ベンチ特化プログラム（重量は読み込み時に最新の1RMから計算） ----
+const A = (name, pct, reps, sets) => ({ name, rx: [{ pct, reps, sets }] });
+const P = (name, plan) => ({ name, plan });
+const PROGRAMS = {
+  strength: {
+    title: 'ベンチ強化ブロック', sub: '4週・週2回（高重量の日＋止め/ナローの日）。4週目はデロード。',
+    build() {
+      const heavy = [[0.75, 5, 5], [0.78, 4, 5], [0.82, 3, 5], [0.70, 3, 3]];
+      const pause = [[0.68, 6, 4], [0.70, 5, 4], [0.72, 4, 4], [0.60, 5, 3]];
+      const close = [[0.62, 8, 3], [0.64, 8, 3], [0.66, 6, 3], [0.55, 8, 2]];
+      const out = [];
+      for (let w = 0; w < 4; w++) {
+        const de = w === 3;
+        out.push({ name: `W${w + 1}-A ${de ? 'デロード' : '高重量'}`, exercises: [A('ベンチプレス', heavy[w][0], heavy[w][1], heavy[w][2]), P('ダンベルプレス', de ? '2×10' : '3×8-10'), P('ベントオーバーロウ', de ? '2×8' : '4×8'), P('フェイスプル', '3×15')] });
+        out.push({ name: `W${w + 1}-B ${de ? 'デロード' : '止め＋ナロー'}`, exercises: [A('止めベンチ', pause[w][0], pause[w][1], pause[w][2]), A('ナローベンチ', close[w][0], close[w][1], close[w][2]), P('懸垂', de ? '2×6' : '4×6-8'), P('ライイングエクステンション', de ? '2×10' : '3×10'), P('サイドレイズ', '3×15')] });
+      }
+      return out;
+    }
+  },
+  freq3: {
+    title: '週3回 高頻度', sub: '4週・週3回（重い日／速い日／止めの日）。技術練習を増やしたい中級者向け。',
+    build() {
+      const h = [[0.78, 3, 5], [0.80, 3, 5], [0.83, 2, 5], [0.70, 3, 3]];
+      const sp = [[0.60, 3, 8], [0.62, 3, 8], [0.62, 3, 6], [0.55, 3, 5]];
+      const pz = [[0.70, 4, 5], [0.72, 4, 5], [0.75, 3, 5], [0.62, 3, 3]];
+      const out = [];
+      for (let w = 0; w < 4; w++) {
+        out.push({ name: `W${w + 1}-1 重い日`, exercises: [A('ベンチプレス', h[w][0], h[w][1], h[w][2]), P('ベントオーバーロウ', '3×8'), P('トライセプスプッシュダウン', '3×12')] });
+        out.push({ name: `W${w + 1}-2 速い日`, exercises: [A('スピードベンチ', sp[w][0], sp[w][1], sp[w][2]), P('インクラインダンベルプレス', '3×10'), P('フェイスプル', '3×15')] });
+        out.push({ name: `W${w + 1}-3 止めの日`, exercises: [A('止めベンチ', pz[w][0], pz[w][1], pz[w][2]), P('懸垂', '3×8'), P('JMプレス', '3×8')] });
+      }
+      return out;
+    }
+  },
+  peak: {
+    title: '大会ピーキング', sub: '4週・週2回。重量を上げてボリュームを落とし、大会週は軽く。大会の約4週前から開始。',
+    build() {
+      return [
+        { name: 'W1-A 強度', exercises: [{ name: '止めベンチ', rx: [{ pct: 0.85, reps: 3, sets: 4 }, { pct: 0.75, reps: 5, sets: 3 }] }, P('ダンベルプレス', '3×8'), P('ベントオーバーロウ', '3×8')] },
+        { name: 'W1-B ボリューム', exercises: [A('止めベンチ', 0.75, 4, 4), A('ナローベンチ', 0.65, 6, 3), P('懸垂', '3×8'), P('トライセプスプッシュダウン', '3×12')] },
+        { name: 'W2-A 強度', exercises: [{ name: '止めベンチ', rx: [{ pct: 0.88, reps: 2, sets: 4 }, { pct: 0.78, reps: 4, sets: 3 }] }, P('ダンベルプレス', '2×8'), P('ベントオーバーロウ', '3×8')] },
+        { name: 'W2-B ボリューム', exercises: [A('止めベンチ', 0.77, 3, 4), A('ナローベンチ', 0.67, 5, 3), P('懸垂', '3×6')] },
+        { name: 'W3-A ピーク', exercises: [{ name: '止めベンチ', rx: [{ pct: 0.90, reps: 1, sets: 1 }, { pct: 0.93, reps: 1, sets: 1 }, { pct: 0.80, reps: 3, sets: 3 }] }, P('ベントオーバーロウ', '2×8')] },
+        { name: 'W3-B 軽め', exercises: [A('止めベンチ', 0.72, 3, 3), P('懸垂', '2×6')] },
+        { name: 'W4 大会3〜4日前', exercises: [{ name: '止めベンチ', rx: [{ pct: 0.70, reps: 2, sets: 2 }, { pct: 0.80, reps: 1, sets: 1 }] }] }
+      ];
+    }
+  }
+};
+// ---- 通常メニューのテンプレート（1RM不要。重量は前回の記録から） ----
+const NORMAL_MENUS = {
+  ppl: { title: 'PPL（押す・引く・脚）', sub: '3日で1周。週3〜6回。胸・肩・三頭／背中・二頭／脚。',
+    build: () => [
+      { name: 'Push 胸・肩・三頭', exercises: [P('ベンチプレス', '4×6-8'), P('インクラインダンベルプレス', '3×8-12'), P('ダンベルショルダープレス', '3×8-12'), P('サイドレイズ', '4×12-15'), P('トライセプスプッシュダウン', '3×10-15')] },
+      { name: 'Pull 背中・二頭', exercises: [P('懸垂', '4×6-10'), P('ベントオーバーロウ', '3×8-10'), P('ラットプルダウン', '3×10-12'), P('フェイスプル', '3×15'), P('ダンベルカール', '3×10-12')] },
+      { name: 'Legs 脚・腹', exercises: [P('スクワット', '4×6-8'), P('ルーマニアンデッドリフト', '3×8-10'), P('レッグプレス', '3×10-12'), P('レッグカール', '3×10-15'), P('カーフレイズ', '4×12-15'), P('アブローラー', '3×10')] }
+    ] },
+  ul: { title: '上半身／下半身 分割', sub: '週4回（上・下・上・下）。高重量の日と回数多めの日。',
+    build: () => [
+      { name: '上半身A 高重量', exercises: [P('ベンチプレス', '4×5'), P('ベントオーバーロウ', '4×6-8'), P('ショルダープレス', '3×6-8'), P('懸垂', '3×6-8'), P('ライイングエクステンション', '3×8-10')] },
+      { name: '下半身A 高重量', exercises: [P('スクワット', '4×5'), P('ルーマニアンデッドリフト', '3×6-8'), P('レッグプレス', '3×8-10'), P('カーフレイズ', '4×10-12')] },
+      { name: '上半身B 回数多め', exercises: [P('インクラインダンベルプレス', '4×8-12'), P('ラットプルダウン', '4×10-12'), P('サイドレイズ', '4×12-15'), P('シーテッドロー', '3×10-12'), P('ハンマーカール', '3×10-12')] },
+      { name: '下半身B 回数多め', exercises: [P('ブルガリアンスクワット', '3×8-12'), P('レッグエクステンション', '3×12-15'), P('レッグカール', '3×12-15'), P('ハンギングレッグレイズ', '3×10-15')] }
+    ] },
+  bro: { title: '部位別 5分割', sub: '週5回。1日1部位を追い込む、ボディビル寄りの分割。',
+    build: () => [
+      { name: '胸の日', exercises: [P('ベンチプレス', '4×6-8'), P('インクラインダンベルプレス', '4×8-12'), P('ディップス', '3×8-12'), P('ケーブルクロスオーバー', '3×12-15')] },
+      { name: '背中の日', exercises: [P('デッドリフト', '3×5'), P('懸垂', '4×6-10'), P('ベントオーバーロウ', '3×8-10'), P('シーテッドロー', '3×10-12'), P('ストレートアームプルダウン', '3×12-15')] },
+      { name: '肩の日', exercises: [P('ショルダープレス', '4×6-8'), P('サイドレイズ', '5×12-15'), P('リアレイズ', '4×12-15'), P('アップライトロウ', '3×10-12')] },
+      { name: '脚の日', exercises: [P('スクワット', '4×6-8'), P('レッグプレス', '3×10-12'), P('ルーマニアンデッドリフト', '3×8-10'), P('レッグエクステンション', '3×12-15'), P('レッグカール', '3×12-15'), P('カーフレイズ', '4×12-15')] },
+      { name: '腕の日', exercises: [P('JMプレス', '3×8-10'), P('バーベルカール', '3×8-12'), P('トライセプスプッシュダウン', '3×10-15'), P('インクラインダンベルカール', '3×10-12'), P('オーバーヘッドエクステンション', '3×10-15'), P('ハンマーカール', '3×10-12')] }
+    ] },
+  batman: { title: 'バットマン分割', sub: '週6回（胸＋背中／腕＋肩／脚 を2周）。各部位を週2回。肩幅・背中・胸の厚みを狙うSNSで話題の分割。',
+    build: () => {
+      const a = [
+        { name: '胸＋背中', exercises: [P('ベンチプレス', '4×6-8'), P('懸垂', '4×8-10'), P('インクラインダンベルプレス', '3×8-12'), P('ベントオーバーロウ', '3×8-10'), P('ケーブルクロスオーバー', '3×12-15')] },
+        { name: '腕＋肩', exercises: [P('ショルダープレス', '4×6-8'), P('サイドレイズ', '4×12-15'), P('リアレイズ', '3×12-15'), P('バーベルカール', '3×8-10'), P('トライセプスプッシュダウン', '3×10-12')] },
+        { name: '脚', exercises: [P('スクワット', '4×6-8'), P('ルーマニアンデッドリフト', '3×8-10'), P('レッグプレス', '3×10-12'), P('カーフレイズ', '4×12-15')] }
+      ];
+      const b = [
+        { name: '胸＋背中', exercises: [P('インクラインベンチプレス', '4×6-8'), P('ラットプルダウン', '4×10-12'), P('ダンベルプレス', '3×8-12'), P('シーテッドロー', '3×10-12'), P('ディップス', '3×8-12')] },
+        { name: '腕＋肩', exercises: [P('ダンベルショルダープレス', '3×8-10'), P('ケーブルサイドレイズ', '4×12-15'), P('フェイスプル', '3×15'), P('インクラインダンベルカール', '3×10-12'), P('オーバーヘッドエクステンション', '3×10-12')] },
+        { name: '脚・弱点', exercises: [P('ブルガリアンスクワット', '3×8-12'), P('レッグエクステンション', '3×12-15'), P('レッグカール', '3×12-15'), P('ハンギングレッグレイズ', '3×10-15')] }
+      ];
+      return a.map((x, i) => ({ name: `D${i + 1} ${x.name}`, exercises: x.exercises })).concat(b.map((x, i) => ({ name: `D${i + 4} ${x.name}`, exercises: x.exercises })));
+    } },
+  arnold: { title: 'アーノルド分割', sub: '週6回（胸＋背中／肩＋腕／脚 を2周）。アーノルド・シュワルツェネッガーの定番。高ボリューム・上級者向け。',
+    build: () => [
+      { name: '胸＋背中', exercises: [P('ベンチプレス', '4×8-10'), P('懸垂', '4×8-10'), P('インクラインダンベルプレス', '3×10'), P('ベントオーバーロウ', '3×10'), P('ダンベルフライ', '3×12'), P('ダンベルロウ', '3×12')] },
+      { name: '肩＋腕', exercises: [P('ショルダープレス', '4×8-10'), P('サイドレイズ', '4×12-15'), P('アップライトロウ', '3×10'), P('バーベルカール', '4×8-10'), P('ライイングエクステンション', '4×8-10'), P('ハンマーカール', '3×12')] },
+      { name: '脚', exercises: [P('スクワット', '4×8-10'), P('ルーマニアンデッドリフト', '3×10'), P('レッグプレス', '3×12'), P('レッグカール', '3×12'), P('カーフレイズ', '5×15'), P('クランチ', '3×20')] }
+    ] },
+  phul: { title: 'PHUL（パワー＋筋肥大 上下分割）', sub: '週4回。上下それぞれ「重い日（パワー）」と「回数多め（筋肥大）」。筋力と見た目を両立。',
+    build: () => [
+      { name: '上半身パワー', exercises: [P('ベンチプレス', '4×3-5'), P('ベントオーバーロウ', '4×3-5'), P('ショルダープレス', '3×5-8'), P('懸垂', '3×6-10'), P('バーベルカール', '2×6-10'), P('ライイングエクステンション', '2×6-10')] },
+      { name: '下半身パワー', exercises: [P('スクワット', '4×3-5'), P('デッドリフト', '3×3-5'), P('レッグプレス', '4×10-15'), P('レッグカール', '4×6-10'), P('カーフレイズ', '4×6-10')] },
+      { name: '上半身 筋肥大', exercises: [P('インクラインダンベルプレス', '4×8-12'), P('ダンベルフライ', '3×8-12'), P('シーテッドロー', '4×8-12'), P('ダンベルロウ', '4×8-12'), P('サイドレイズ', '4×8-12'), P('インクラインダンベルカール', '4×8-12'), P('トライセプスプッシュダウン', '4×8-12')] },
+      { name: '下半身 筋肥大', exercises: [P('ブルガリアンスクワット', '4×8-12'), P('ランジ', '3×8-12'), P('レッグエクステンション', '4×10-15'), P('レッグカール', '4×10-15'), P('カーフレイズ', '4×8-12')] }
+    ] },
+  phat: { title: 'PHAT（パワー＋筋肥大 5日）', sub: '週5回。前半2日が上下のパワー、後半3日が部位別の筋肥大。中上級者向け。',
+    build: () => [
+      { name: '上半身パワー', exercises: [P('ベントオーバーロウ', '3×3-5'), P('懸垂', '2×6-10'), P('ベンチプレス', '3×3-5'), P('ディップス', '2×6-10'), P('ショルダープレス', '3×6-10'), P('バーベルカール', '3×6-10'), P('ライイングエクステンション', '3×6-10')] },
+      { name: '下半身パワー', exercises: [P('スクワット', '3×3-5'), P('レッグプレス', '2×6-10'), P('ルーマニアンデッドリフト', '3×5-8'), P('レッグカール', '2×6-10'), P('カーフレイズ', '3×6-10')] },
+      { name: '背中＋肩 筋肥大', exercises: [P('ベントオーバーロウ', '6×3（スピード）'), P('懸垂', '3×8-12'), P('シーテッドロー', '3×8-12'), P('ダンベルロウ', '2×12-15'), P('ダンベルショルダープレス', '3×8-12'), P('サイドレイズ', '3×12-20'), P('アップライトロウ', '2×12-15')] },
+      { name: '脚 筋肥大', exercises: [P('スクワット', '6×3（スピード）'), P('ブルガリアンスクワット', '3×8-12'), P('レッグプレス', '3×12-15'), P('レッグエクステンション', '3×15-20'), P('レッグカール', '3×12-15'), P('カーフレイズ', '4×10-15')] },
+      { name: '胸＋腕 筋肥大', exercises: [P('ダンベルプレス', '6×3（スピード）'), P('インクラインダンベルプレス', '3×8-12'), P('ケーブルクロスオーバー', '2×15-20'), P('プリーチャーカール', '3×8-12'), P('インクラインダンベルカール', '2×12-15'), P('フレンチプレス', '3×8-12'), P('トライセプスプッシュダウン', '2×12-15')] }
+    ] },
+  pplul: { title: 'PPL＋上下（PPLUL）', sub: '週5回（押す・引く・脚・上半身・下半身）。PPLより回復日を取りやすい人気の組み合わせ。',
+    build: () => [
+      { name: 'Push 胸・肩・三頭', exercises: [P('ベンチプレス', '4×6-8'), P('ダンベルショルダープレス', '3×8-10'), P('インクラインダンベルプレス', '3×10-12'), P('サイドレイズ', '4×12-15'), P('トライセプスプッシュダウン', '3×12')] },
+      { name: 'Pull 背中・二頭', exercises: [P('懸垂', '4×6-10'), P('ベントオーバーロウ', '3×8-10'), P('フェイスプル', '3×15'), P('バーベルカール', '3×10')] },
+      { name: 'Legs 脚', exercises: [P('スクワット', '4×6-8'), P('ルーマニアンデッドリフト', '3×8-10'), P('レッグカール', '3×12'), P('カーフレイズ', '4×12-15')] },
+      { name: '上半身', exercises: [P('インクラインベンチプレス', '3×8-10'), P('ラットプルダウン', '3×10-12'), P('ショルダープレス', '3×8-10'), P('シーテッドロー', '3×10-12'), P('ハンマーカール', '2×12'), P('オーバーヘッドエクステンション', '2×12')] },
+      { name: '下半身', exercises: [P('レッグプレス', '4×10-12'), P('ブルガリアンスクワット', '3×10'), P('レッグエクステンション', '3×15'), P('ハンギングレッグレイズ', '3×12')] }
+    ] },
+  four: { title: '4分割（胸／背中／肩・腕／脚）', sub: '週4回。1部位を週1回しっかり追い込む。5分割より1日少なく続けやすい。',
+    build: () => [
+      { name: '胸', exercises: [P('ベンチプレス', '4×6-8'), P('インクラインダンベルプレス', '4×8-12'), P('ディップス', '3×8-12'), P('ケーブルクロスオーバー', '3×12-15')] },
+      { name: '背中', exercises: [P('デッドリフト', '3×5'), P('懸垂', '4×6-10'), P('ベントオーバーロウ', '3×8-10'), P('ラットプルダウン', '3×10-12')] },
+      { name: '肩・腕', exercises: [P('ショルダープレス', '4×6-8'), P('サイドレイズ', '4×12-15'), P('リアレイズ', '3×15'), P('バーベルカール', '3×8-12'), P('JMプレス', '3×8-10'), P('ハンマーカール', '3×12')] },
+      { name: '脚', exercises: [P('スクワット', '4×6-8'), P('レッグプレス', '3×10-12'), P('ルーマニアンデッドリフト', '3×8-10'), P('レッグカール', '3×12-15'), P('カーフレイズ', '4×12-15')] }
+    ] },
+  full: { title: '全身 週3回', sub: '毎回全身。初心者や忙しい週に。',
+    build: () => [
+      { name: '全身A', exercises: [P('スクワット', '3×6-8'), P('ベンチプレス', '3×6-8'), P('ベントオーバーロウ', '3×8-10'), P('サイドレイズ', '3×12-15'), P('クランチ', '3×15')] },
+      { name: '全身B', exercises: [P('ルーマニアンデッドリフト', '3×8-10'), P('ショルダープレス', '3×6-8'), P('懸垂', '3×6-10'), P('ダンベルプレス', '3×8-12'), P('プランク', '3セット 45秒キープ')] }
+    ] }
+};
+// 分割の部位（ベンチ系は胸として扱う）
+const SPLIT_PARTS = ['胸', '背中', '肩', '三頭', '二頭', '脚', '腹筋'];
+const splitPartOf = name => { const p = partOf(name); return p === 'ベンチ' ? '胸' : p; };
+function filterSessions(sessions, excluded) {
+  if (!excluded || !excluded.length) return sessions;
+  return sessions.map(sess => {
+    const kept = sess.exercises.filter(e => !excluded.includes(splitPartOf(e.name)));
+    const removed = [...new Set(sess.exercises.filter(e => excluded.includes(splitPartOf(e.name))).map(e => splitPartOf(e.name)))];
+    return { name: sess.name + (removed.length && kept.length ? `（${removed.join('・')}なし）` : ''), exercises: kept };
+  }).filter(sess => sess.exercises.length);
+}
+// 分割を選んだら、やる部位・やらない部位を選ぶ画面を出す
+function openSplitSheet(key) {
+  const def = NORMAL_MENUS[key];
+  const excluded = new Set();
+  const body = openSheet(def.title, `
+    <p class="small muted" style="margin-bottom:12px">${esc(def.sub)}</p>
+    <div class="card-title">やる部位を選ぶ <span class="tiny dim">タップでオン・オフ</span></div>
+    <div class="row wrapf" id="partToggles" style="margin-bottom:14px"></div>
+    <div class="card-title">内容 <span class="tiny dim" id="splitCount"></span></div>
+    <div id="splitPreview"></div>
+    <button class="btn primary block" id="splitAdd" style="margin-top:12px">このテンプレートを追加</button>`, { full: true });
+  const draw = () => {
+    $('#partToggles').innerHTML = SPLIT_PARTS.map(p => `<button class="btn sm" data-tp="${p}" style="${excluded.has(p) ? 'opacity:0.45;text-decoration:line-through' : 'background:var(--accent);border-color:var(--accent);color:#fff'}">${excluded.has(p) ? '' : '✓ '}${p}</button>`).join('');
+    const sessions = filterSessions(def.build(), [...excluded]);
+    $('#splitCount').textContent = sessions.length ? `${sessions.length}日で1周` : '';
+    $('#splitPreview').innerHTML = sessions.length ? sessions.map(ss => `<div class="sess"><b>${esc(ss.name)}</b>${ss.exercises.map(e => `<div class="small" style="margin-top:3px">${esc(e.name)} <span class="muted">${esc(e.plan || '')}</span></div>`).join('')}</div>`).join('') : '<div class="empty">部位が1つも選ばれていません</div>';
+    $('#splitAdd').disabled = !sessions.length;
+    $('#splitAdd').style.opacity = sessions.length ? '' : '0.4';
+  };
+  draw();
+  body.addEventListener('click', e => {
+    const t = e.target.closest('[data-tp]');
+    if (t) { const p = t.dataset.tp; excluded.has(p) ? excluded.delete(p) : excluded.add(p); return draw(); }
+    if (e.target.closest('#splitAdd')) { if (filterSessions(def.build(), [...excluded]).length) { closeSheet(); createProgram(key, [...excluded]); } }
+  });
+}
+async function createProgram(key, excluded) {
+  const s = getSettings();
+  const def = PROGRAMS[key] || NORMAL_MENUS[key];
+  const sessions = filterSessions(def.build(), excluded);
+  if (PROGRAMS[key] && !s.oneRM) { await dialog('先にベンチプレスの1RM（最大挙上重量）を入れてください。\n重量は1RMの％で自動計算されます。'); $('#oneRMInp') && $('#oneRMInp').focus(); return; }
+  const d = new Date();
+  const g = uniqueGroup(`${def.title} ${d.getMonth() + 1}/${d.getDate()}` + (excluded && excluded.length ? `（${excluded.join('・')}なし）` : ''));
+  const list = getTemplates();
+  sessions.forEach((sess, i) => list.push({ id: 'prg_' + Date.now() + '_' + i, name: sess.name, group: g, exercises: sess.exercises }));
+  saveTemplates(list);
+  const seq = load(KEY_SEQ, {});
+  // 新しいプログラムを「使用中」にして、次のセッションをその1回目にする
+  save(KEY_SEQ, { lastId: null, lastName: seq.lastName || '', lastDate: seq.lastDate || '' });
+  setSettings({ activeGroup: g });
+  renderProg();
+  toast(`保存しました\n「${g}」（${sessions.length}回分）`);
+}
+
+// ===================== プログラム画面 =====================
+const openGroups = {};
+function renderProg() {
+  const s = getSettings();
+  const list = getTemplates();
+  const nx = nextSession();
+  const est = recentE1rm(56);
+  let h = `<div class="card">
+    <div class="card-title">ベンチプレスの基準</div>
+    <div class="grid2">
+      <div class="field" style="margin:0"><label>1RM（kg）</label><input class="inp" id="oneRMInp" inputmode="decimal" value="${s.oneRM || ''}" placeholder="例：100"></div>
+      <div class="field" style="margin:0"><label>大会日（任意）</label><input class="inp" id="meetInp" type="date" value="${esc(s.meetDate || '')}"></div>
+    </div>
+    ${est ? `<div class="small muted" style="margin-top:8px">記録からの推定1RM（直近8週）：<b style="color:var(--text)">${fmtKg(roundTo(est, 0.5))}kg</b> <button class="link" data-use-est="${roundTo(est, s.step || 2.5)}">この値を使う</button></div>` : ''}
+    <button class="btn primary block" id="saveBase" style="margin-top:10px">保存</button>
+  </div>`;
+  if (s.meetDate && s.oneRM) h += meetCard(s);
+  h += `<div class="card"><div class="card-title">ベンチ専用プログラム <span class="tiny dim">重量は1RMの％から自動計算</span></div>
+    ${Object.entries(PROGRAMS).map(([k, p]) => `<button class="pick" data-prog="${k}"><span><b>${esc(p.title)}</b><br><span class="small muted">${esc(p.sub)}</span></span><span class="link">作成</span></button>`).join('')}
+  </div>`;
+  h += `<div class="card"><div class="card-title">分割法テンプレート <span class="tiny dim">部位を選べます・重量は前回の記録から</span></div>
+    ${['batman', 'arnold', 'ppl', 'pplul', 'ul', 'phul', 'phat', 'four', 'bro', 'full'].filter(k => NORMAL_MENUS[k]).map(k => { const p = NORMAL_MENUS[k]; return `<button class="pick" data-prog="${k}"><span><b>${esc(p.title)}</b><br><span class="small muted">${esc(p.sub)}</span></span><span class="link">選ぶ</span></button>`; }).join('')}
+    <button class="btn primary block" data-custom style="margin-top:4px">＋ 自分でテンプレートを作る</button>
+  </div>`;
+  h += `<div class="card-title" style="margin:16px 2px 8px">マイプログラム・テンプレート</div>`;
+  if (!list.length) h += `<div class="card empty">まだありません。上のプログラムやテンプレートを追加するか、記録画面で「この日をセッションとして保存」してください。</div>`;
+  const activeG = nx ? groupOf(nx) : null;
+  groupNames(list).forEach(g => {
+    const items = list.filter(t => groupOf(t) === g);
+    if (!(g in openGroups)) openGroups[g] = g === activeG;
+    const open = openGroups[g];
+    h += `<div class="group ${g === activeG ? 'active' : ''}"><div class="group-h" data-gtoggle="${esc(g)}">
+      <span class="dim small">${open ? '▼' : '▶'}</span>
+      <b style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(g)}</b>
+      ${g === activeG ? '<span class="pill ok">使用中</span>' : ''}<span class="tiny dim">${items.length}回</span>
+    </div>`;
+    if (open) {
+      h += `<div class="group-b"><div class="row wrapf" style="margin-bottom:8px">
+        <button class="btn sm primary" data-guse="${esc(g)}">1回目から使う</button>
+        <button class="btn sm" data-gren="${esc(g)}">名前変更</button>
+        <button class="btn sm danger" data-gdel="${esc(g)}">削除</button></div>`;
+      items.forEach(t => {
+        const isNext = nx && nx.id === t.id;
+        h += `<div class="sess ${isNext ? 'next' : ''}"><div class="row between"><b>${esc(t.name)}</b>${isNext ? '<span class="pill ok">次</span>' : ''}</div>
+          ${(t.exercises || []).map(e => `<div class="small" style="margin-top:3px"><span>${esc(e.name)}</span> <span class="muted">${esc(exPlanText(e, s.oneRM))}</span></div>`).join('')}
+          <div class="row" style="margin-top:8px"><button class="btn sm primary" data-tload="${esc(t.id)}">今日に読み込む</button><button class="btn sm" data-tedit="${esc(t.id)}">編集</button><button class="btn sm" data-tup="${esc(t.id)}">↑</button><button class="btn sm" data-tdown="${esc(t.id)}">↓</button><button class="btn sm danger" data-tdel="${esc(t.id)}">削除</button></div></div>`;
+      });
+      h += `</div>`;
+    }
+    h += `</div>`;
+  });
+  h += `<div class="card-title" style="margin:16px 2px 8px">ツール</div>
+    <div class="grid2"><button class="btn" data-tool="pct">％早見表</button><button class="btn" data-tool="plate">プレート計算</button></div>`;
+  $('#view-prog').innerHTML = h;
+}
+function meetCard(s) {
+  const left = daysBetween(today(), s.meetDate);
+  const st = s.step || 2.5;
+  const a = [0.91, 0.96, 1.01].map(p => roundTo(s.oneRM * p, st));
+  return `<div class="card"><div class="card-title">大会 <span class="pill ${left >= 0 ? 'warn' : 'gray'}">${left > 0 ? 'あと' + left + '日' : left === 0 ? '今日' : '終了'}</span></div>
+    <div class="grid3"><div class="stat"><span>第1試技</span><b>${a[0]}</b></div><div class="stat"><span>第2試技</span><b>${a[1]}</b></div><div class="stat"><span>第3試技</span><b>${a[2]}</b></div></div>
+    <div class="tiny dim" style="margin-top:8px">1RM ${s.oneRM}kg の 91% / 96% / 101%。第1試技は「調子が悪くても確実に挙がる重量」に。${left > 0 && left <= 35 ? '<br>大会まで5週以内です。「大会ピーキング」がおすすめです。' : ''}</div></div>`;
+}
+$('#view-prog').addEventListener('click', async e => {
+  const t = e.target;
+  const q = sel => t.closest(sel);
+  if (q('[data-use-est]')) { $('#oneRMInp').value = q('[data-use-est]').dataset.useEst; return; }
+  if (q('#saveBase')) {
+    const v = num($('#oneRMInp').value);
+    if (v != null && (v < 20 || v > 400)) { toast('1RMは20〜400kgで入れてください', true); return; }
+    setSettings({ oneRM: v, meetDate: $('#meetInp').value || '' });
+    renderProg(); toast('保存しました'); return;
+  }
+  if (q('[data-prog]')) { const k = q('[data-prog]').dataset.prog; return NORMAL_MENUS[k] ? openSplitSheet(k) : createProgram(k); }
+  if (q('[data-custom]')) return openSessionEditor(null);
+  if (q('[data-tool]')) return q('[data-tool]').dataset.tool === 'pct' ? openPctTable() : openPlateCalc();
+  const list = getTemplates();
+  const byId = id => list.find(x => x.id === id);
+  if (q('[data-guse]')) {
+    const g = q('[data-guse]').dataset.guse;
+    save(KEY_SEQ, { lastId: null }); setSettings({ activeGroup: g });
+    const first = list.find(x => groupOf(x) === g);
+    if (first && await confirmDlg(`「${g}」を使用中にしました。\n1回目「${first.name}」を今日の記録に読み込みますか？`, '読み込む')) return loadTemplateInto(first, today());
+    return renderProg();
+  }
+  if (q('[data-gren]')) {
+    const g = q('[data-gren]').dataset.gren;
+    const body = openSheet('名前を変更', `<input class="inp" id="gName" value="${esc(g)}"><button class="btn primary block" id="gSave" style="margin-top:10px">保存</button>`);
+    $('#gName', body).focus();
+    body.addEventListener('click', ev => { if (!ev.target.closest('#gSave')) return; const nn = $('#gName').value.trim(); if (nn && nn !== g) { const l = getTemplates(); l.forEach(x => { if (groupOf(x) === g) x.group = nn; }); saveTemplates(l); if (getSettings().activeGroup === g) setSettings({ activeGroup: nn }); openGroups[nn] = true; } closeSheet(); renderProg(); toast('変更しました'); });
+    return;
+  }
+  if (q('[data-gdel]')) {
+    const g = q('[data-gdel]').dataset.gdel;
+    const n = list.filter(x => groupOf(x) === g).length;
+    if (await confirmDlg(`「${g}」（${n}回分）を削除しますか？\n記録は消えません。`, '削除する', true)) { saveTemplates(list.filter(x => groupOf(x) !== g)); renderProg(); toast('削除しました'); }
+    return;
+  }
+  if (q('[data-gtoggle]')) { const g = q('[data-gtoggle]').dataset.gtoggle; openGroups[g] = !openGroups[g]; return renderProg(); }
+  if (q('[data-tload]')) { const x = byId(q('[data-tload]').dataset.tload); if (x) loadTemplateInto(x, today()); return; }
+  if (q('[data-tedit]')) return openSessionEditor(q('[data-tedit]').dataset.tedit);
+  if (q('[data-tup]') || q('[data-tdown]')) {
+    const id = (q('[data-tup]') || q('[data-tdown]')).dataset[q('[data-tup]') ? 'tup' : 'tdown'];
+    const dir = q('[data-tup]') ? -1 : 1;
+    const idx = list.findIndex(x => x.id === id); const g = groupOf(list[idx]);
+    let j = idx + dir; while (j >= 0 && j < list.length && groupOf(list[j]) !== g) j += dir;
+    if (j < 0 || j >= list.length) return;
+    [list[idx], list[j]] = [list[j], list[idx]]; saveTemplates(list); return renderProg();
+  }
+  if (q('[data-tdel]')) { const x = byId(q('[data-tdel]').dataset.tdel); if (x && await confirmDlg(`「${x.name}」を削除しますか？`, '削除する', true)) { saveTemplates(list.filter(y => y.id !== x.id)); renderProg(); toast('削除しました'); } }
+});
+
+// セッション編集（種目・セット数・回数・重量 or ％）
+function openSessionEditor(id) {
+  const list = getTemplates();
+  const t = id ? list.find(x => x.id === id) : null;
+  const rows = t ? (t.exercises || []).map(e => { const r = (e.rx && e.rx[0]) || {}; const ps = parsePlanSets(e.plan); return { name: e.name, sets: r.sets || e.setCount || (ps && ps.sets) || '', reps: r.reps || e.targetReps || (ps && ps.reps) || '', kg: r.kg != null ? r.kg : (e.targetWeight || ''), pct: r.pct ? Math.round(r.pct * 100) : '', extra: e.rx && e.rx.length > 1 ? e.rx.slice(1) : null }; }) : [{ name: 'ベンチプレス', sets: 5, reps: 5, kg: '', pct: 75 }];
+  const allNames = [...new Set(LIB.flatMap(g => g.items).concat((getSettings().customEx || []).map(c => c.name)))];
+  const body = openSheet(t ? 'セッションを編集' : 'セッションを作る', `
+    <div class="field"><label>セッション名</label><input class="inp" id="sName" value="${esc(t ? t.name : '')}" placeholder="例：高重量の日"></div>
+    <div class="field"><label>プログラム（グループ）</label><input class="inp" id="sGroup" list="gList" value="${esc(t ? groupOf(t) : DEFAULT_GROUP)}"><datalist id="gList">${groupNames().map(g => `<option value="${esc(g)}">`).join('')}</datalist></div>
+    <datalist id="exNames">${allNames.map(n => `<option value="${esc(n)}">`).join('')}</datalist>
+    <div class="tiny dim" style="margin-bottom:6px">重量は「kg」か「1RMの％」のどちらかでOK（％なら1RMの変更に自動で追従）。</div>
+    <div id="rows"></div>
+    <button class="btn block" id="addRow">＋ 種目</button>
+    <button class="btn primary block" id="sSave" style="margin-top:12px">保存</button>`, { full: true });
+  const draw = () => {
+    $('#rows').innerHTML = rows.map((r, i) => `<div class="card" style="padding:10px;margin-bottom:8px" data-row="${i}">
+      <div class="row"><input class="inp" data-k="name" list="exNames" value="${esc(r.name)}" placeholder="種目名"><button class="btn sm danger" data-rdel="${i}">削除</button></div>
+      <div class="grid2" style="grid-template-columns:repeat(4,1fr);margin-top:6px">
+        <div><div class="tiny dim">セット</div><input class="inp" data-k="sets" inputmode="numeric" value="${esc(r.sets)}"></div>
+        <div><div class="tiny dim">回数</div><input class="inp" data-k="reps" inputmode="numeric" value="${esc(r.reps)}"></div>
+        <div><div class="tiny dim">kg</div><input class="inp" data-k="kg" inputmode="decimal" value="${esc(r.kg)}"></div>
+        <div><div class="tiny dim">％1RM</div><input class="inp" data-k="pct" inputmode="decimal" value="${esc(r.pct)}"></div>
+      </div>${r.extra ? `<div class="tiny dim" style="margin-top:4px">＋追加セット（${esc(rxText(r.extra, getSettings().oneRM))}）は保持されます</div>` : ''}</div>`).join('');
+  };
+  draw();
+  body.addEventListener('input', e => { const row = e.target.closest('[data-row]'); if (!row || !e.target.dataset.k) return; rows[+row.dataset.row][e.target.dataset.k] = e.target.value; });
+  body.addEventListener('click', async e => {
+    if (e.target.closest('#addRow')) { rows.push({ name: '', sets: 3, reps: 8, kg: '', pct: '' }); draw(); return; }
+    const d = e.target.closest('[data-rdel]'); if (d) { rows.splice(+d.dataset.rdel, 1); draw(); return; }
+    if (!e.target.closest('#sSave')) return;
+    const name = $('#sName').value.trim();
+    if (!name) { toast('セッション名を入れてください', true); return; }
+    const exercises = rows.filter(r => String(r.name).trim()).map(r => {
+      const sets = num(r.sets), reps = num(r.reps), kg = num(r.kg), pct = num(r.pct);
+      if (sets && reps) { const rx = [{ sets: Math.round(sets), reps: Math.round(reps), kg: pct ? null : kg, pct: pct ? pct / 100 : null }]; if (r.extra) rx.push(...r.extra); return { name: r.name.trim(), rx }; }
+      return { name: r.name.trim(), plan: '' };
+    });
+    if (!exercises.length) { toast('種目を1つ以上入れてください', true); return; }
+    const l = getTemplates();
+    const payload = { id: t ? t.id : 'tpl_' + Date.now(), name, group: $('#sGroup').value.trim() || DEFAULT_GROUP, exercises };
+    const idx = l.findIndex(x => x.id === payload.id);
+    if (idx >= 0) l[idx] = Object.assign({}, l[idx], payload); else l.push(payload);
+    saveTemplates(l); closeSheet(); openGroups[payload.group] = true; renderProg(); toast('保存しました');
+  });
+}
+function openPctTable() {
+  const s = getSettings();
+  const base = s.oneRM || 100;
+  const body = openSheet('％早見表', `<div class="field"><label>基準の1RM（kg）</label><input class="inp" id="pctBase" inputmode="decimal" value="${base}"></div><div id="pctOut"></div>`);
+  const draw = () => {
+    const b = num($('#pctBase').value) || 0;
+    const reps = { 1: 100, 2: 95, 3: 93, 4: 90, 5: 87, 6: 85, 8: 80, 10: 75, 12: 70 };
+    $('#pctOut').innerHTML = `<table class="t"><tr><th>％</th><th class="num">重量</th><th>目安の回数</th></tr>${[105, 102.5, 100, 97.5, 95, 92.5, 90, 87.5, 85, 82.5, 80, 77.5, 75, 72.5, 70, 67.5, 65, 60, 55, 50].map(p => { const r = Object.entries(reps).find(([, v]) => Math.abs(v - p) < 1.3); return `<tr><td>${p}%</td><td class="num"><b>${fmtKg(roundTo(b * p / 100, s.step || 2.5))}</b></td><td class="muted small">${r ? r[0] + '回が限界' : ''}</td></tr>`; }).join('')}</table>`;
+  };
+  draw(); $('#pctBase', body).addEventListener('input', draw);
+}
+function openPlateCalc() {
+  const body = openSheet('プレート計算', `<div class="grid2"><div class="field"><label>合計重量（kg）</label><input class="inp" id="plW" inputmode="decimal" value="${getSettings().oneRM ? roundTo(getSettings().oneRM * 0.8, 2.5) : 60}"></div><div class="field"><label>バー（kg）</label><input class="inp" id="plBar" inputmode="decimal" value="${getSettings().bar || 20}"></div></div><div id="plOut"></div>`);
+  const draw = () => {
+    const w = num($('#plW').value) || 0, bar = num($('#plBar').value) || 20;
+    let side = (w - bar) / 2; const ps = [];
+    if (side >= 0) for (const p of PLATES) while (side >= p - 1e-9) { ps.push(p); side -= p; }
+    const h = { 25: 64, 20: 64, 15: 56, 10: 48, 5: 36, 2.5: 28, 1.25: 22 };
+    const wd = { 25: 16, 20: 14, 15: 12, 10: 10, 5: 8, 2.5: 7, 1.25: 6 };
+    $('#plOut').innerHTML = w < bar ? '<div class="empty">バーより軽い重量です</div>' : `<div class="card"><div class="plates">${ps.map(p => `<div class="pl" style="height:${h[p]}px;width:${wd[p]}px;background:${PLATE_COLOR[p]}">${p}</div>`).join('')}<div class="barl"></div></div>
+      <div style="text-align:center;margin-top:8px"><b>片側：${ps.length ? ps.join(' + ') : 'なし'}</b>${side > 0.01 ? `<div class="small" style="color:var(--warn)">端数 ${fmtKg(side)}kg は作れません</div>` : ''}</div></div>`;
+  };
+  draw(); body.addEventListener('input', draw);
+}
+
+// ===================== 分析 =====================
+function benchPoints() {
+  // 日ごとの最高推定1RM（ベンチプレス・止めベンチ）
+  const map = {};
+  allEntries().forEach(({ k, ex }) => { if (!isCompBench(ex.name)) return; const v = bestE1rm(ex); if (v && (!map[k] || v > map[k])) map[k] = v; });
+  return Object.keys(map).sort().map(k => ({ k, v: map[k] }));
+}
+function recentE1rm(days, endK) {
+  const end = endK || today(); const start = addDays(end, -days);
+  let best = null;
+  benchPoints().forEach(p => { if (p.k > start && p.k <= end && (!best || p.v > best)) best = p.v; });
+  return best;
+}
+function weekStats(monK) {
+  const end = addDays(monK, 7);
+  const out = { sessions: new Set(), benchSets: 0, tonnage: 0, muscles: { 胸: 0, 背中: 0, 肩: 0, 三頭: 0, 二頭: 0, 脚: 0, 腹筋: 0 } };
+  allEntries().forEach(({ k, ex }) => {
+    if (k < monK || k >= end) return;
+    const ws = workSets(ex);
+    if (!ws.length) return;
+    out.sessions.add(k);
+    if (isBench(ex.name)) { out.benchSets += ws.length; ws.forEach(s => { out.tonnage += s.weight * s.reps; }); }
+    musclesOf(ex.name).forEach(m => { if (m in out.muscles) out.muscles[m] += ws.length; });
+  });
+  return out;
+}
+let chartRange = 180;
+function lineChart(points, opts) {
+  if (points.length < 2) return '<div class="empty">記録が2日分たまるとグラフが出ます</div>';
+  const W = 340, H = 170, L = 34, R = 8, T = 10, B = 22;
+  const t0 = parseDk(points[0].k).getTime(), t1 = parseDk(points[points.length - 1].k).getTime();
+  const vs = points.map(p => p.v).concat(opts.ref ? [opts.ref] : []);
+  let mn = Math.min(...vs), mx = Math.max(...vs); const pad = Math.max(2, (mx - mn) * 0.15); mn = Math.floor((mn - pad) / 5) * 5; mx = Math.ceil((mx + pad) / 5) * 5;
+  const x = k => L + (t1 === t0 ? 0.5 : (parseDk(k).getTime() - t0) / (t1 - t0)) * (W - L - R);
+  const y = v => T + (1 - (v - mn) / (mx - mn)) * (H - T - B);
+  let g = '';
+  for (let i = 0; i <= 4; i++) { const v = mn + (mx - mn) * i / 4; g += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="rgba(255,255,255,0.06)"/><text x="${L - 4}" y="${y(v) + 3}" text-anchor="end">${Math.round(v)}</text>`; }
+  const pts = points.map(p => `${x(p.k).toFixed(1)},${y(p.v).toFixed(1)}`).join(' ');
+  const ref = opts.ref ? `<line x1="${L}" x2="${W - R}" y1="${y(opts.ref)}" y2="${y(opts.ref)}" stroke="#f59e0b" stroke-dasharray="4 4"/><text x="${W - R}" y="${y(opts.ref) - 4}" text-anchor="end" style="fill:#fcd34d">設定1RM ${opts.ref}</text>` : '';
+  const lbl = [points[0], points[points.length - 1]].map((p, i) => `<text x="${x(p.k)}" y="${H - 6}" text-anchor="${i ? 'end' : 'start'}">${fmtD(p.k)}</text>`).join('');
+  const dots = points.map(p => `<circle cx="${x(p.k).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="2.6" fill="#818cf8"/>`).join('');
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">${g}${ref}<polyline points="${pts}" fill="none" stroke="#818cf8" stroke-width="2.2" stroke-linejoin="round"/>${dots}${lbl}</svg>`;
+}
+let prEx = 'ベンチプレス';
+function renderStats() {
+  const s = getSettings();
+  const all = benchPoints();
+  const from = chartRange ? addDays(today(), -chartRange) : '0000';
+  const pts = all.filter(p => p.k >= from);
+  const benchNames = [...new Set(allEntries().filter(x => isBench(x.ex.name) && workSets(x.ex).length).map(x => x.ex.name))];
+  if (!benchNames.includes(prEx) && benchNames.length) prEx = benchNames[0];
+  // PR表
+  const prs = {};
+  [1, 2, 3, 5, 8, 10].forEach(n => { prs[n] = null; });
+  allEntries().forEach(({ k, ex }) => { if (ex.name !== prEx) return; workSets(ex).forEach(st => { Object.keys(prs).forEach(n => { if (st.reps >= +n && (!prs[n] || st.weight > prs[n].w)) prs[n] = { w: st.weight, k, reps: st.reps }; }); }); });
+  // 週ごと
+  const weeks = []; let mon = mondayOf(today());
+  for (let i = 0; i < 8; i++) { weeks.unshift({ mon, st: weekStats(mon) }); mon = addDays(mon, -7); }
+  const maxSets = Math.max(10, ...weeks.map(w => w.st.benchSets));
+  const tw = weeks[weeks.length - 1].st;
+  // 体重
+  const wlog = load(KEY_WEIGHT, []).filter(x => x && x.date && x.weight).sort((a, b) => a.date.localeCompare(b.date));
+  const bw = wlog.length ? wlog[wlog.length - 1].weight : null;
+  const bestNow = recentE1rm(56) || s.oneRM;
+  let h = `<div class="card"><div class="card-title">ベンチ 推定1RMの推移 <span class="tiny dim">ベンチ・止めベンチの本番セット</span></div>
+    <div class="tabs">${[[90, '3ヶ月'], [180, '6ヶ月'], [365, '1年'], [0, '全期間']].map(([d, l]) => `<button data-range="${d}" class="${chartRange === d ? 'on' : ''}">${l}</button>`).join('')}</div>
+    ${lineChart(pts, { ref: s.oneRM })}</div>`;
+  h += `<div class="card"><div class="card-title">自己ベスト（回数別）<select class="inp" id="prSel" style="width:auto;min-height:32px;font-size:12px">${(benchNames.length ? benchNames : ['ベンチプレス']).map(n => `<option ${n === prEx ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></div>
+    <table class="t"><tr><th>回数</th><th class="num">重量</th><th class="num">推定1RM</th><th class="num">日付</th></tr>${Object.entries(prs).map(([n, p]) => `<tr><td>${n}回</td><td class="num"><b>${p ? fmtKg(p.w) + 'kg' : '-'}</b></td><td class="num muted">${p ? fmtKg(Math.round(e1rm(p.w, p.reps))) : ''}</td><td class="num muted">${p ? fmtD(p.k) : ''}</td></tr>`).join('')}</table></div>`;
+  h += `<div class="card"><div class="card-title">ベンチ系の週セット数（直近8週）<span class="tiny dim">アップ除く</span></div>
+    ${weeks.map(w => `<div class="bar-row"><span class="muted">${fmtD(w.mon).replace(/\(.\)/, '')}〜</span><div class="bar"><i style="width:${w.st.benchSets / maxSets * 100}%"></i></div><span class="num" style="text-align:right">${w.st.benchSets}セット</span></div>`).join('')}
+    <div class="tiny dim">今週のベンチ総挙上量 ${Math.round(tw.tonnage).toLocaleString()}kg ・ トレーニング ${tw.sessions.size}日</div></div>`;
+  h += `<div class="card"><div class="card-title">今週の部位別セット数 <span class="tiny dim">緑の帯＝週10〜20セットの目安</span></div>
+    ${Object.entries(tw.muscles).map(([m, n]) => `<div class="bar-row"><span>${m}</span><div class="bar"><span class="band" style="left:${10 / 25 * 100}%;width:${10 / 25 * 100}%"></span><i style="width:${Math.min(n, 25) / 25 * 100}%;background:${n < 10 ? '#f59e0b' : n > 20 ? '#ef4444' : '#10b981'}"></i></div><span style="text-align:right">${n}セット</span></div>`).join('')}
+    <div class="tiny dim">ベンチ系・ディップスは胸と三頭の両方に数えています。</div></div>`;
+  h += `<div class="card"><div class="card-title">体重と体重比</div>
+    <div class="grid3"><div class="stat"><span>体重</span><b>${bw ? fmtKg(bw) : '-'}</b></div><div class="stat"><span>1RM</span><b>${bestNow ? fmtKg(roundTo(bestNow, 0.5)) : '-'}</b></div><div class="stat"><span>体重比</span><b>${bw && bestNow ? (bestNow / bw).toFixed(2) + '倍' : '-'}</b></div></div>
+    <div class="row" style="margin-top:10px"><input class="inp" id="bwInp" inputmode="decimal" placeholder="今日の体重 kg" style="flex:1"><button class="btn primary" id="bwSave">記録</button></div>
+    ${wlog.length >= 2 ? `<div style="margin-top:10px">${lineChart(wlog.slice(-60).map(x => ({ k: x.date, v: Number(x.weight) })), {})}</div>` : ''}</div>`;
+  const names = [...new Set(allEntries().map(x => x.ex.name))];
+  h += `<div class="card"><div class="card-title">種目の履歴</div><div class="row"><select class="inp" id="histSel">${names.map(n => `<option>${esc(n)}</option>`).join('')}</select><button class="btn" id="histGo">見る</button></div></div>`;
+  $('#view-stats').innerHTML = h;
+}
+$('#view-stats').addEventListener('click', e => {
+  const r = e.target.closest('[data-range]'); if (r) { chartRange = Number(r.dataset.range); return renderStats(); }
+  if (e.target.closest('#bwSave')) {
+    const w = num($('#bwInp').value); if (!w || w < 25 || w > 250) { toast('体重を正しく入れてください', true); return; }
+    const log = load(KEY_WEIGHT, []).filter(x => x.date !== today()); log.push({ date: today(), weight: w }); save(KEY_WEIGHT, log); renderStats(); toast('保存しました'); return;
+  }
+  if (e.target.closest('#histGo')) { const n = $('#histSel').value; if (n) openHistory(n); }
+});
+$('#view-stats').addEventListener('change', e => { if (e.target.id === 'prSel') { prEx = e.target.value; renderStats(); } });
+
+// ===================== ホーム =====================
+function renderHome() {
+  const s = getSettings();
+  const est = recentE1rm(56);
+  const prevEst = recentE1rm(28, addDays(today(), -28));
+  const nx = nextSession();
+  const tw = weekStats(mondayOf(today()));
+  const pts = benchPoints().slice(-5).reverse();
+  let h = `<div class="card"><div class="card-title">ベンチプレス ${s.meetDate ? (() => { const l = daysBetween(today(), s.meetDate); return l >= 0 ? `<span class="pill warn">大会まで${l}日</span>` : ''; })() : ''}</div>
+    <div class="grid2"><div><div class="tiny muted">設定1RM</div><div class="big">${s.oneRM ? fmtKg(s.oneRM) : '—'}<small>kg</small></div></div>
+    <div><div class="tiny muted">推定1RM（直近8週）</div><div class="big" style="color:var(--accent2)">${est ? fmtKg(roundTo(est, 0.5)) : '—'}<small>kg</small></div>
+    ${est && prevEst ? `<div class="small ${est >= prevEst ? 'up' : 'down'}">${est >= prevEst ? '▲' : '▼'} ${fmtKg(Math.abs(Math.round((est - prevEst) * 10) / 10))}kg（4週前比）</div>` : ''}</div></div>
+    ${!s.oneRM ? '<button class="btn primary block" data-go="prog" style="margin-top:12px">1RMを設定する</button>' : ''}
+    ${est && s.oneRM && est > s.oneRM + 1 ? `<button class="btn block" data-apply-est="${roundTo(est, s.step || 2.5)}" style="margin-top:10px">推定が設定を上回っています → 1RMを${roundTo(est, s.step || 2.5)}kgに更新</button>` : ''}
+  </div>`;
+  if (nx) {
+    h += `<div class="card"><div class="card-title">次のセッション <span class="tiny dim">${esc(groupOf(nx))}</span></div>
+      <div style="font-weight:800;font-size:18px;margin-bottom:6px">${esc(nx.name)}</div>
+      ${(nx.exercises || []).map(e => `<div class="small"><span>${esc(e.name)}</span> <span class="muted">${esc(exPlanText(e, s.oneRM))}</span></div>`).join('')}
+      <button class="btn primary block" data-start style="margin-top:12px">今日やる（記録に読み込む）</button></div>`;
+  } else {
+    h += `<div class="card"><div class="card-title">はじめに</div><p class="small muted" style="margin-bottom:10px">1RMを入れてプログラムを作ると、毎回の重量・セット数が自動で入ります。</p><button class="btn primary block" data-go="prog">プログラムを作る</button></div>`;
+  }
+  h += `<div class="card"><div class="card-title">今週</div><div class="grid3">
+    <div class="stat"><span>トレ日数</span><b>${tw.sessions.size}</b></div><div class="stat"><span>ベンチ系セット</span><b>${tw.benchSets}</b></div><div class="stat"><span>胸のセット</span><b class="${tw.muscles['胸'] < 10 ? '' : tw.muscles['胸'] > 20 ? 'down' : 'up'}">${tw.muscles['胸']}</b></div></div>
+    <div class="tiny dim" style="margin-top:6px">胸は週10〜20セットが目安</div></div>`;
+  h += `<div class="card"><div class="card-title">最近のベンチ <button class="link" data-go="stats">分析へ</button></div>
+    ${pts.length ? pts.map(p => `<div class="row between small" style="padding:6px 0;border-bottom:1px solid var(--line)"><span>${fmtD(p.k)}</span><span class="muted">推定1RM <b style="color:var(--text)">${fmtKg(Math.round(p.v * 10) / 10)}kg</b></span></div>`).join('') : '<div class="small muted">まだベンチの記録がありません</div>'}
+    <button class="btn block" data-go="log" style="margin-top:12px">記録をつける</button></div>`;
+  const lb = getSettings().lastBackup;
+  const hasData = Object.keys(allData()).length > 0;
+  if (hasData && (!lb || Date.now() - lb > 7 * 86400000)) {
+    h = `<div class="card" style="border-color:rgba(245,158,11,0.5)"><div class="row between"><div><div class="small" style="color:#fcd34d;font-weight:700">バックアップ ${lb ? Math.floor((Date.now() - lb) / 86400000) + '日前' : '未実施'}</div><div class="tiny muted">機種変更やデータ削除に備えて保存しましょう</div></div><button class="btn sm primary" data-backup-now>保存</button></div></div>` + h;
+  }
+  $('#view-home').innerHTML = h;
+}
+$('#view-home').addEventListener('click', e => {
+  const go = e.target.closest('[data-go]'); if (go) { if (go.dataset.go === 'log') logDate = today(); return show(go.dataset.go); }
+  if (e.target.closest('[data-start]')) { const nx = nextSession(); if (nx) loadTemplateInto(nx, today()); return; }
+  if (e.target.closest('[data-backup-now]')) { shareBackup().then(() => renderHome()); return; }
+  const ap = e.target.closest('[data-apply-est]'); if (ap) { setSettings({ oneRM: Number(ap.dataset.applyEst) }); renderHome(); toast('1RMを更新しました'); }
+});
+
+// ===================== 設定・バックアップ =====================
+const BACKUP_KEYS = [KEY_DATA, KEY_TPL, KEY_SEQ, KEY_WEIGHT, KEY_BIG3, KEY_SET];
+function openSettings() {
+  const s = getSettings();
+  const days = Object.keys(allData()).length;
+  const body = openSheet('設定', `
+    <div class="grid2">
+      <div class="field"><label>バーの重さ（kg）</label><input class="inp" id="stBar" inputmode="decimal" value="${s.bar}"></div>
+      <div class="field"><label>重量の刻み（kg）</label><select class="inp" id="stStep">${[1, 1.25, 2.5, 5].map(v => `<option ${s.step === v ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+      <div class="field"><label>休憩：ベンチ系（秒）</label><input class="inp" id="stRestM" inputmode="numeric" value="${s.restMain}"></div>
+      <div class="field"><label>休憩：補助種目（秒）</label><input class="inp" id="stRestA" inputmode="numeric" value="${s.restAcc}"></div>
+    </div>
+    <button class="btn primary block" id="stSave">保存</button>
+    <div class="sep"></div>
+    <div class="card-title">バックアップ <span class="tiny dim">記録 ${days}日分</span></div>
+    <p class="small muted" style="margin-bottom:10px">データはこの端末の中だけに保存されています。トレーニング終了時に1タップで外部に保存できます。前回の外部バックアップ：<b style="color:var(--text)">${s.lastBackup ? fmtD(dk(new Date(s.lastBackup))) : 'まだありません'}</b></p>
+    <div style="display:grid;gap:8px">
+      <button class="btn primary block" id="bkShare">今すぐバックアップ（1タップ）</button>
+      <button class="btn block" id="bkExport">バックアップをファイルに保存</button>
+      <button class="btn block" id="bkCopy">バックアップをコピー（メモ等に貼り付け用）</button>
+      <button class="btn block" id="bkImport">バックアップから復元</button>
+    </div>
+    <div class="sep"></div>
+    <div class="card-title">アプリ内の自動控え <span class="tiny dim">直近3回・間違って消した時用</span></div>
+    ${load(KEY_SNAP, []).slice().reverse().map((sn, i, arr) => `<div class="item"><div class="item-main"><div class="item-title">${fmtD(dk(new Date(sn.at)))} ${new Date(sn.at).toTimeString().slice(0, 5)}</div><div class="item-sub">${esc(sn.reason)}</div></div><button class="btn sm" data-snap="${arr.length - 1 - i}">この時点に戻す</button></div>`).join('') || '<div class="small muted">まだありません（トレーニング終了時に自動で作られます）</div>'}
+    <div class="tiny dim" style="margin-top:6px">※控えはこの端末の中にあるため、ブラウザのデータ削除や機種変更では消えます。外部バックアップも併用してください。</div>`);
+  body.addEventListener('click', async e => {
+    if (e.target.closest('#stSave')) {
+      const bar = num($('#stBar').value), rm = num($('#stRestM').value), ra = num($('#stRestA').value);
+      setSettings({ bar: bar || 20, step: Number($('#stStep').value) || 2.5, restMain: Math.max(15, rm || 180), restAcc: Math.max(15, ra || 90) });
+      closeSheet(); toast('保存しました'); if (renderers[currentView]) renderers[currentView](); return;
+    }
+    if (e.target.closest('#bkShare')) { await shareBackup(); openSettings(); return; }
+    const sn = e.target.closest('[data-snap]');
+    if (sn) {
+      const snap = load(KEY_SNAP, [])[+sn.dataset.snap]; if (!snap) return;
+      if (!(await confirmDlg(`${fmtD(dk(new Date(snap.at)))} ${new Date(snap.at).toTimeString().slice(0, 5)} の状態に戻しますか？\n今のデータは上書きされます。`, '戻す', true))) return;
+      takeSnapshot('復元前');
+      const obj = JSON.parse(snap.json); BACKUP_KEYS.forEach(k => { if (obj.data[k] != null) localStorage.setItem(k, obj.data[k]); else localStorage.removeItem(k); });
+      closeSheet(); show(currentView); toast('戻しました'); return;
+    }
+    if (e.target.closest('#bkExport')) {
+      const blob = new Blob([backupJson()], { type: 'application/json' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `forge-bench-backup-${today()}.json`;
+      document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+      setSettings({ lastBackup: Date.now() }); toast('バックアップを保存しました'); return;
+    }
+    if (e.target.closest('#bkCopy')) {
+      try { await navigator.clipboard.writeText(backupJson()); setSettings({ lastBackup: Date.now() }); toast('コピーしました'); }
+      catch (err) { const b2 = openSheet('バックアップ（全選択してコピー）', `<textarea class="inp" style="height:60vh;padding:10px;font-size:11px" readonly>${esc(backupJson())}</textarea>`); $('textarea', b2).select(); }
+      return;
+    }
+    if (e.target.closest('#bkImport')) { $('#importFile').value = ''; $('#importFile').click(); }
+  });
+}
+// ---- 自動の控え（アプリ内・直近3回）と、1タップ外部バックアップ ----
+const KEY_SNAP = 'forge-bench-snapshots-v1';
+function takeSnapshot(reason) {
+  try {
+    const json = backupJson();
+    if (json.length > 1500000) return;
+    let arr = load(KEY_SNAP, []);
+    const strip = j => j.replace(/"exportedAt":"[^"]*",/, '');
+    if (arr.length && strip(arr[arr.length - 1].json) === strip(json)) return;
+    arr.push({ at: Date.now(), reason: reason || '', json });
+    arr = arr.slice(-3);
+    try { localStorage.setItem(KEY_SNAP, JSON.stringify(arr)); }
+    catch (e) { localStorage.setItem(KEY_SNAP, JSON.stringify(arr.slice(-1))); }
+  } catch (e) {}
+}
+async function shareBackup() {
+  const json = backupJson();
+  const name = `forge-bench-backup-${today()}`;
+  const markDone = () => { setSettings({ lastBackup: Date.now() }); takeSnapshot('外部バックアップ'); };
+  // 共有メニュー（iCloud Drive・Googleドライブ・ファイル・LINE等）→ 使えなければダウンロード
+  const candidates = [new File([json], name + '.json', { type: 'application/json' }), new File([json], name + '.txt', { type: 'text/plain' })];
+  const file = navigator.canShare ? candidates.find(f => { try { return navigator.canShare({ files: [f] }); } catch (e) { return false; } }) : null;
+  if (file && navigator.share) {
+    try { await navigator.share({ files: [file], title: 'FORGE バックアップ', text: 'FORGE Bench のバックアップ（' + today() + '）' }); markDone(); toast('バックアップを保存しました'); return true; }
+    catch (e) { if (e && e.name === 'AbortError') { toast('バックアップはキャンセルされました', true); return false; } }
+  }
+  const blob = new Blob([json], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name + '.json';
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  markDone(); toast('バックアップファイルを保存しました'); return true;
+}
+function daySummary(k) {
+  const day = getDay(k);
+  let sets = 0, vol = 0, best = null;
+  day.exercises.forEach(ex => { const ws = workSets(ex); sets += ws.length; ws.forEach(s => { vol += s.weight * s.reps; }); if (isCompBench(ex.name)) { const b = bestE1rm(ex); if (b && (!best || b > best)) best = b; } });
+  return { exercises: day.exercises.length, sets, vol, best, undone: day.exercises.reduce((n, ex) => n + ex.sets.filter(s => !s.done).length, 0) };
+}
+function finishWorkout(k) {
+  const sm = daySummary(k);
+  takeSnapshot('トレーニング終了');
+  stopRest();
+  const last = getSettings().lastBackup;
+  const body = openSheet('お疲れさまでした 💪', `
+    <div class="grid3" style="margin-bottom:12px">
+      <div class="stat"><span>種目</span><b>${sm.exercises}</b></div>
+      <div class="stat"><span>本番セット</span><b>${sm.sets}</b></div>
+      <div class="stat"><span>総挙上量</span><b>${Math.round(sm.vol).toLocaleString()}<small class="tiny muted">kg</small></b></div>
+    </div>
+    ${sm.best ? `<div class="card" style="padding:12px;margin-bottom:12px"><div class="tiny muted">今日のベンチ推定1RM</div><div class="big" style="font-size:30px;color:var(--accent2)">${fmtKg(Math.round(sm.best * 10) / 10)}<small>kg</small></div></div>` : ''}
+    ${sm.undone ? `<div class="small" style="color:var(--warn);margin-bottom:10px">未完了のセットが${sm.undone}つあります（そのままでも大丈夫です）</div>` : ''}
+    <button class="btn primary block" id="fnBackup" style="min-height:52px;font-size:16px">バックアップを保存（1タップ）</button>
+    <div class="tiny dim" style="margin:8px 2px 12px">共有メニューが開くので「ファイルに保存」「iCloud Drive」「Googleドライブ」などを選んでください。前回の外部バックアップ：${last ? fmtD(dk(new Date(last))) : 'まだありません'}</div>
+    <button class="btn block" id="fnSkip">今回はしない</button>`);
+  body.addEventListener('click', async e => {
+    if (e.target.closest('#fnBackup')) { const ok = await shareBackup(); if (ok) closeSheet(); if (currentView === 'home') renderHome(); return; }
+    if (e.target.closest('#fnSkip')) { closeSheet(); toast('アプリ内に控えを保存しました'); }
+  });
+}
+function backupJson() { const data = {}; BACKUP_KEYS.forEach(k => { const v = localStorage.getItem(k); if (v != null) data[k] = v; }); return JSON.stringify({ app: 'forge-bench', version: 1, exportedAt: new Date().toISOString(), data }); }
+$('#importFile').addEventListener('change', async e => {
+  const f = e.target.files && e.target.files[0]; if (!f) return;
+  try {
+    const obj = JSON.parse(await f.text());
+    if (!obj || obj.app !== 'forge-bench' || !obj.data) throw new Error('bad');
+    const n = obj.data[KEY_DATA] ? Object.keys(JSON.parse(obj.data[KEY_DATA])).length : 0;
+    if (!(await confirmDlg(`${(obj.exportedAt || '').slice(0, 10)} のバックアップ（記録${n}日分）で、今のデータを置き換えますか？`, '復元する', true))) return;
+    BACKUP_KEYS.forEach(k => { if (obj.data[k] != null) localStorage.setItem(k, obj.data[k]); });
+    closeSheet(); show(currentView); toast('復元しました');
+  } catch (err) { toast('このファイルは読み込めません', true); }
+});
+$('#openSettings').addEventListener('click', openSettings);
+
+// ===================== 起動 =====================
+renderers.home = renderHome; renderers.log = renderLog; renderers.prog = renderProg; renderers.stats = renderStats;
+show('home');
+runRest();
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./sw.js').catch(() => {});
+window.__forge = { buildRestWav, startRest, stopRest, getDay, setDay, getTemplates, nextSession, loadTemplateInto, e1rm, platesFor, recentE1rm, weekStats, show, getSettings, setSettings, createProgram };
+})();
+</script>
+</body>
+</html>
