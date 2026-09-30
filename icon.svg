@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#12121c"/>
-  <circle cx="256" cy="240" r="120" fill="#6366f1" opacity="0.15"/>
-  <rect x="120" y="232" width="272" height="16" rx="4" fill="#6366f1"/>
-  <rect x="100" y="190" width="40" height="100" rx="10" fill="#6366f1"/>
-  <rect x="372" y="190" width="40" height="100" rx="10" fill="#6366f1"/>
-  <text x="256" y="400" text-anchor="middle" font-family="Arial,sans-serif" font-weight="700" font-size="64" fill="#f3f4f6">FORGE</text>
-</svg>
